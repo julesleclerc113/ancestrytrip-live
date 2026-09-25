@@ -1474,9 +1474,7 @@ async function sendReportReadyEmail(
               <h1 style="font-family:Georgia,serif;font-weight:500;font-size:34px;line-height:1.15">Your heritage journey is ready.</h1>
               <p>Hello ${escapeHtml(customerName)},</p>
               <p>Your ${escapeHtml(productName)} report has been researched and is ready to read.</p>
-              <p>
-                <a href="${escapeHtml(reportUrl)}" style="display:inline-block;background:#1f1f1f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:4px">Open my report</a>
-              </p>
+              <p><a href="${escapeHtml(reportUrl)}" style="display:inline-block;background:#1f1f1f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:4px">Open my report</a></p>
               <p style="font-size:14px;color:#666">You can return to this link whenever you want to revisit your report.</p>
               <p style="font-family:Georgia,serif">AncestryTrip<br><span style="font-family:Arial,sans-serif;font-size:14px;color:#666">Turn your family history into a journey.</span></p>
             </div>
@@ -1507,10 +1505,7 @@ async function sendReportReadyEmail(
         ? error.message
         : "Unknown email delivery error.";
 
-    console.error(
-      "Report email delivery failed:",
-      message,
-    );
+    console.error("Report email delivery failed:", message);
 
     await env.DB.prepare(`
       UPDATE ancestry_payments
@@ -1696,6 +1691,7 @@ async function verifyStripeCheckout(
   env: Env,
   sessionId: string,
   ctx: ExecutionContext,
+  origin: string,
 ) {
   const checkout = await getPaidCheckout(
     env,
@@ -1731,7 +1727,7 @@ async function verifyStripeCheckout(
     generateReportForPayment(
       env,
       checkout.paymentId,
-      new URL(request.url).origin,
+      origin,
     ),
   );
 
@@ -1938,3 +1934,155 @@ export default {
           400,
         );
       }
+
+      if (!input.tripId) {
+        return json(
+          { error: "Trip ID is required." },
+          400,
+        );
+      }
+
+      if (!PRODUCTS[input.product]) {
+        return json(
+          { error: "Invalid product." },
+          400,
+        );
+      }
+
+      const trip = await env.DB.prepare(`
+        SELECT id, email
+        FROM ancestry_trips
+        WHERE id = ?
+        LIMIT 1
+      `)
+        .bind(input.tripId)
+        .first<{
+          id: string;
+          email: string;
+        }>();
+
+      if (!trip) {
+        return json(
+          { error: "Trip not found." },
+          404,
+        );
+      }
+
+      try {
+        const checkout =
+          await createStripeCheckout(
+            request,
+            env,
+            trip.id,
+            input.product,
+            trip.email,
+          );
+
+        return json(checkout);
+      } catch (error) {
+        console.error("Checkout error:", error);
+
+        return json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to start checkout.",
+          },
+          502,
+        );
+      }
+    }
+
+    if (
+      url.pathname.startsWith("/api/reports/") &&
+      request.method === "GET"
+    ) {
+      const reportId = url.pathname.slice("/api/reports/".length);
+
+      if (!/^[a-f0-9-]{32,36}$/i.test(reportId)) {
+        return json({ error: "Invalid report ID." }, 400);
+      }
+
+      const report = await env.DB.prepare(`
+        SELECT
+          r.id,
+          r.content_json,
+          p.product,
+          p.amount_cents,
+          p.payment_status
+        FROM ancestry_reports r
+        INNER JOIN ancestry_payments p
+          ON p.id = r.payment_id
+        WHERE r.id = ?
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first<{
+          id: string;
+          content_json: string;
+          product: string;
+          amount_cents: number;
+          payment_status: string;
+        }>();
+
+      if (!report || report.payment_status !== "fulfilled") {
+        return json({ error: "Report not found." }, 404);
+      }
+
+      return json({
+        reportId: report.id,
+        report: JSON.parse(report.content_json),
+        product: report.product,
+        amountCents: report.amount_cents,
+      });
+    }
+
+    if (
+      url.pathname === "/api/checkout/verify" &&
+      request.method === "GET"
+    ) {
+      const sessionId =
+        url.searchParams.get("session_id");
+
+      if (!sessionId) {
+        return json(
+          {
+            error:
+              "Stripe session ID is required.",
+          },
+          400,
+        );
+      }
+
+      try {
+        const result =
+          await verifyStripeCheckout(
+            env,
+            sessionId,
+            ctx,
+            url.origin,
+          );
+
+        return json(result);
+      } catch (error) {
+        console.error(
+          "Payment verification error:",
+          error,
+        );
+
+        return json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to verify payment.",
+          },
+          400,
+        );
+      }
+    }
+
+    return env.ASSETS.fetch(request);
+  },
+} satisfies ExportedHandler<Env>;
