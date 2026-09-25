@@ -1380,9 +1380,154 @@ async function getPaidCheckout(
   };
 }
 
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function sendReportReadyEmail(
+  env: Env,
+  paymentId: string,
+  reportId: string,
+  origin: string,
+) {
+  const claim = await env.DB.prepare(`
+    UPDATE ancestry_payments
+    SET email_status = 'sending',
+        email_error = NULL
+    WHERE id = ?
+      AND payment_status = 'fulfilled'
+      AND email_status IN ('pending', 'failed')
+  `)
+    .bind(paymentId)
+    .run();
+
+  if (!claim.meta.changes) {
+    return;
+  }
+
+  try {
+    const payment = await env.DB.prepare(`
+      SELECT
+        p.product,
+        t.email,
+        t.first_name,
+        t.last_name
+      FROM ancestry_payments p
+      INNER JOIN ancestry_trips t
+        ON t.id = p.trip_id
+      WHERE p.id = ?
+      LIMIT 1
+    `)
+      .bind(paymentId)
+      .first<{
+        product: string;
+        email: string;
+        first_name: string | null;
+        last_name: string | null;
+      }>();
+
+    if (!payment) {
+      throw new Error("Payment record not found for email delivery.");
+    }
+
+    if (!env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured.");
+    }
+
+    const customerName =
+      [payment.first_name, payment.last_name]
+        .filter(Boolean)
+        .join(" ") || "there";
+
+    const reportUrl =
+      `${origin}/report/${encodeURIComponent(reportId)}`;
+
+    const productName =
+      payment.product === "deep"
+        ? "Deep Heritage Trip"
+        : "Heritage Trip";
+
+    const resendResponse = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `report-ready/${paymentId}`,
+        },
+        body: JSON.stringify({
+          from:
+            "AncestryTrip <onboarding@resend.dev>",
+          to: [payment.email],
+          subject:
+            "Your AncestryTrip heritage journey is ready",
+          html: `
+            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f1f1f;max-width:640px;margin:0 auto;padding:32px 20px">
+              <p style="font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6f6f6f">ANCESTRYTRIP</p>
+              <h1 style="font-family:Georgia,serif;font-weight:500;font-size:34px;line-height:1.15">Your heritage journey is ready.</h1>
+              <p>Hello ${escapeHtml(customerName)},</p>
+              <p>Your ${escapeHtml(productName)} report has been researched and is ready to read.</p>
+              <p>
+                <a href="${escapeHtml(reportUrl)}" style="display:inline-block;background:#1f1f1f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:4px">Open my report</a>
+              </p>
+              <p style="font-size:14px;color:#666">You can return to this link whenever you want to revisit your report.</p>
+              <p style="font-family:Georgia,serif">AncestryTrip<br><span style="font-family:Arial,sans-serif;font-size:14px;color:#666">Turn your family history into a journey.</span></p>
+            </div>
+          `,
+        }),
+      },
+    );
+
+    if (!resendResponse.ok) {
+      const errorText = await resendResponse.text();
+      throw new Error(
+        `Resend rejected the email: ${resendResponse.status} ${errorText.slice(0, 500)}`,
+      );
+    }
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET email_status = 'sent',
+          email_sent_at = CURRENT_TIMESTAMP,
+          email_error = NULL
+      WHERE id = ?
+    `)
+      .bind(paymentId)
+      .run();
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown email delivery error.";
+
+    console.error(
+      "Report email delivery failed:",
+      message,
+    );
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET email_status = 'failed',
+          email_error = ?
+      WHERE id = ?
+        AND email_status = 'sending'
+    `)
+      .bind(message.slice(0, 1000), paymentId)
+      .run();
+  }
+}
+
 async function generateReportForPayment(
   env: Env,
   paymentId: string,
+  origin: string,
 ) {
   const claim = await env.DB.prepare(`
     UPDATE ancestry_payments
@@ -1435,6 +1580,13 @@ async function generateReportForPayment(
       `)
         .bind(payment.id)
         .run();
+
+      await sendReportReadyEmail(
+        env,
+        payment.id,
+        existingReport.id,
+        origin,
+      );
       return;
     }
 
@@ -1503,6 +1655,26 @@ async function generateReportForPayment(
     `)
       .bind(payment.id)
       .run();
+
+    const storedReport = await env.DB.prepare(`
+      SELECT id
+      FROM ancestry_reports
+      WHERE payment_id = ?
+      LIMIT 1
+    `)
+      .bind(payment.id)
+      .first<{ id: string }>();
+
+    if (!storedReport) {
+      throw new Error("Report was not stored after generation.");
+    }
+
+    await sendReportReadyEmail(
+      env,
+      payment.id,
+      storedReport.id,
+      origin,
+    );
   } catch (error) {
     console.error(
       "Background report generation failed:",
@@ -1559,6 +1731,7 @@ async function verifyStripeCheckout(
     generateReportForPayment(
       env,
       checkout.paymentId,
+      new URL(request.url).origin,
     ),
   );
 
@@ -1732,6 +1905,7 @@ export default {
             generateReportForPayment(
               env,
               checkout.paymentId,
+              url.origin,
             ),
           );
         }
