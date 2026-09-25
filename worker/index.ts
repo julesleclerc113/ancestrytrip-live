@@ -1542,6 +1542,7 @@ async function verifyStripeCheckout(
   `)
     .bind(checkout.paymentId)
     .first<{
+      id: string;
       content_json: string;
     }>();
 
