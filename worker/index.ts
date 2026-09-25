@@ -1279,7 +1279,7 @@ async function createStripeCheckout(
   };
 }
 
-async function verifyStripeCheckout(
+async function getPaidCheckout(
   env: Env,
   sessionId: string,
 ) {
@@ -1365,9 +1365,174 @@ async function verifyStripeCheckout(
     UPDATE ancestry_payments
     SET payment_status = 'paid'
     WHERE id = ?
+      AND payment_status IN ('pending', 'paid')
   `)
     .bind(payment.id)
     .run();
+
+  return {
+    paid: true,
+    paymentId: payment.id,
+    product: payment.product,
+    amountCents: payment.amount_cents,
+    email: session.customer_email,
+    tripId: payment.trip_id,
+  };
+}
+
+async function generateReportForPayment(
+  env: Env,
+  paymentId: string,
+) {
+  const claim = await env.DB.prepare(`
+    UPDATE ancestry_payments
+    SET payment_status = 'generating'
+    WHERE id = ?
+      AND payment_status = 'paid'
+  `)
+    .bind(paymentId)
+    .run();
+
+  if (!claim.meta.changes) {
+    return;
+  }
+
+  try {
+    const payment = await env.DB.prepare(`
+      SELECT
+        id,
+        trip_id,
+        product
+      FROM ancestry_payments
+      WHERE id = ?
+      LIMIT 1
+    `)
+      .bind(paymentId)
+      .first<{
+        id: string;
+        trip_id: string;
+        product: string;
+      }>();
+
+    if (!payment) {
+      throw new Error("Payment record not found while generating report.");
+    }
+
+    const existingReport = await env.DB.prepare(`
+      SELECT id
+      FROM ancestry_reports
+      WHERE payment_id = ?
+      LIMIT 1
+    `)
+      .bind(payment.id)
+      .first<{ id: string }>();
+
+    if (existingReport) {
+      await env.DB.prepare(`
+        UPDATE ancestry_payments
+        SET payment_status = 'fulfilled'
+        WHERE id = ?
+      `)
+        .bind(payment.id)
+        .run();
+      return;
+    }
+
+    const trip = await env.DB.prepare(`
+      SELECT
+        first_name,
+        last_name,
+        email,
+        ancestral_place,
+        birth_year,
+        birth_place,
+        notes
+      FROM ancestry_trips
+      WHERE id = ?
+      LIMIT 1
+    `)
+      .bind(payment.trip_id)
+      .first<{
+        first_name: string | null;
+        last_name: string | null;
+        email: string;
+        ancestral_place: string;
+        birth_year: number | null;
+        birth_place: string | null;
+        notes: string | null;
+      }>();
+
+    if (!trip) {
+      throw new Error("Trip record not found.");
+    }
+
+    const product =
+      payment.product === "deep"
+        ? "deep"
+        : "heritage";
+
+    const report = await generateHeritageReport(
+      env,
+      trip,
+      product,
+    );
+
+    const reportId = crypto.randomUUID().replaceAll("-", "");
+
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO ancestry_reports (
+        id,
+        trip_id,
+        payment_id,
+        content_json
+      )
+      VALUES (?, ?, ?, ?)
+    `)
+      .bind(
+        reportId,
+        payment.trip_id,
+        payment.id,
+        JSON.stringify(report),
+      )
+      .run();
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'fulfilled'
+      WHERE id = ?
+    `)
+      .bind(payment.id)
+      .run();
+  } catch (error) {
+    console.error(
+      "Background report generation failed:",
+      error,
+    );
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'paid'
+      WHERE id = ?
+        AND payment_status = 'generating'
+    `)
+      .bind(paymentId)
+      .run();
+  }
+}
+
+async function verifyStripeCheckout(
+  env: Env,
+  sessionId: string,
+  ctx: ExecutionContext,
+) {
+  const checkout = await getPaidCheckout(
+    env,
+    sessionId,
+  );
+
+  if (!checkout.paid) {
+    return checkout;
+  }
 
   const existingReport = await env.DB.prepare(`
     SELECT content_json
@@ -1375,92 +1540,34 @@ async function verifyStripeCheckout(
     WHERE payment_id = ?
     LIMIT 1
   `)
-    .bind(payment.id)
+    .bind(checkout.paymentId)
     .first<{
       content_json: string;
     }>();
 
   if (existingReport) {
     return {
-      paid: true,
-      product: payment.product,
-      amountCents: payment.amount_cents,
-      email: session.customer_email,
-      tripId: payment.trip_id,
+      ...checkout,
       report: JSON.parse(existingReport.content_json),
+      reportStatus: "ready",
     };
   }
 
-  const trip = await env.DB.prepare(`
-    SELECT
-      first_name,
-      last_name,
-      email,
-      ancestral_place,
-      birth_year,
-      birth_place,
-      notes
-    FROM ancestry_trips
-    WHERE id = ?
-    LIMIT 1
-  `)
-    .bind(payment.trip_id)
-    .first<{
-      first_name: string | null;
-      last_name: string | null;
-      email: string;
-      ancestral_place: string;
-      birth_year: number | null;
-      birth_place: string | null;
-      notes: string | null;
-    }>();
-
-  if (!trip) {
-    throw new Error("Trip record not found.");
-  }
-
-  const product =
-    payment.product === "deep"
-      ? "deep"
-      : "heritage";
-
-  const report = await generateHeritageReport(
-    env,
-    trip,
-    product,
+  ctx.waitUntil(
+    generateReportForPayment(
+      env,
+      checkout.paymentId,
+    ),
   );
 
-  const reportId = crypto.randomUUID().replaceAll("-", "");
-
-  await env.DB.prepare(`
-    INSERT OR IGNORE INTO ancestry_reports (
-      id,
-      trip_id,
-      payment_id,
-      content_json
-    )
-    VALUES (?, ?, ?, ?)
-  `)
-    .bind(
-      reportId,
-      payment.trip_id,
-      payment.id,
-      JSON.stringify(report),
-    )
-    .run();
-
   return {
-    paid: true,
-    product: payment.product,
-    amountCents: payment.amount_cents,
-    email: session.customer_email,
-    tripId: payment.trip_id,
-    report,
+    ...checkout,
+    reportStatus: "generating",
   };
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api" || url.pathname === "/api/") {
