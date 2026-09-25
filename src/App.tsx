@@ -140,16 +140,17 @@ function App() {
       return;
     }
 
-    const sessionId = new URLSearchParams(
+    const sessionIdParam = new URLSearchParams(
       window.location.search,
     ).get("session_id");
 
-    if (!sessionId) {
+    if (!sessionIdParam) {
       setPaymentLoading(false);
       setError("No Stripe session was found.");
       return;
     }
 
+    const sessionId: string = sessionIdParam;
     let cancelled = false;
 
     async function verifyPayment() {
