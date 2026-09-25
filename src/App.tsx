@@ -65,6 +65,7 @@ interface PaymentVerification {
   amountCents?: number;
   email?: string | null;
   tripId?: string;
+  reportId?: string;
   report?: HeritageReport;
   reportStatus?: "generating" | "ready";
 }
@@ -91,27 +92,70 @@ function App() {
   const [paymentLoading, setPaymentLoading] = useState(true);
 
   useEffect(() => {
-    if (window.location.pathname !== "/success") {
+    const pathname = window.location.pathname;
+
+    if (pathname.startsWith("/report/")) {
+      const reportId = pathname.slice("/report/".length);
+
+      if (!reportId) {
+        setPaymentLoading(false);
+        setError("No report was found.");
+        return;
+      }
+
+      fetch(`/api/reports/${encodeURIComponent(reportId)}`)
+        .then(async (response) => {
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || "Unable to load this report.",
+            );
+          }
+
+          setPayment({
+            paid: true,
+            reportId: data.reportId,
+            product: data.product,
+            amountCents: data.amountCents,
+            report: data.report,
+            reportStatus: "ready",
+          });
+          setPaymentLoading(false);
+        })
+        .catch((err) => {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load this report.",
+          );
+          setPaymentLoading(false);
+        });
+
+      return;
+    }
+
+    if (pathname !== "/success") {
       setPaymentLoading(false);
       return;
     }
 
-    const sessionId = new URLSearchParams(
+    const sessionIdParam = new URLSearchParams(
       window.location.search,
     ).get("session_id");
 
-    if (!sessionId) {
+    if (!sessionIdParam) {
       setPaymentLoading(false);
       setError("No Stripe session was found.");
       return;
     }
 
-    const verifiedSessionId = sessionId;
+    const sessionId: string = sessionIdParam;
     let cancelled = false;
 
     async function verifyPayment() {
       const response = await fetch(
-        `/api/checkout/verify?session_id=${encodeURIComponent(verifiedSessionId)}`,
+        `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
       );
       const data = await response.json();
 
@@ -125,6 +169,17 @@ function App() {
 
       setPayment(data);
       setPaymentLoading(false);
+
+      if (
+        data.paid &&
+        data.reportStatus === "ready" &&
+        data.reportId
+      ) {
+        window.location.replace(
+          `/report/${encodeURIComponent(data.reportId)}`,
+        );
+        return;
+      }
 
       if (data.paid && data.reportStatus === "generating") {
         window.setTimeout(() => {
