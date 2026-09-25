@@ -1535,7 +1535,7 @@ async function verifyStripeCheckout(
   }
 
   const existingReport = await env.DB.prepare(`
-    SELECT content_json
+    SELECT id, content_json
     FROM ancestry_reports
     WHERE payment_id = ?
     LIMIT 1
@@ -1548,6 +1548,7 @@ async function verifyStripeCheckout(
   if (existingReport) {
     return {
       ...checkout,
+      reportId: existingReport.id,
       report: JSON.parse(existingReport.content_json),
       reportStatus: "ready",
     };
@@ -1820,6 +1821,50 @@ export default {
           502,
         );
       }
+    }
+
+    if (
+      url.pathname.startsWith("/api/reports/") &&
+      request.method === "GET"
+    ) {
+      const reportId = url.pathname.slice("/api/reports/".length);
+
+      if (!/^[a-f0-9-]{32,36}$/i.test(reportId)) {
+        return json({ error: "Invalid report ID." }, 400);
+      }
+
+      const report = await env.DB.prepare(`
+        SELECT
+          r.id,
+          r.content_json,
+          p.product,
+          p.amount_cents,
+          p.payment_status
+        FROM ancestry_reports r
+        INNER JOIN ancestry_payments p
+          ON p.id = r.payment_id
+        WHERE r.id = ?
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first<{
+          id: string;
+          content_json: string;
+          product: string;
+          amount_cents: number;
+          payment_status: string;
+        }>();
+
+      if (!report || report.payment_status !== "fulfilled") {
+        return json({ error: "Report not found." }, 404);
+      }
+
+      return json({
+        reportId: report.id,
+        report: JSON.parse(report.content_json),
+        product: report.product,
+        amountCents: report.amount_cents,
+      });
     }
 
     if (
