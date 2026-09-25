@@ -106,11 +106,12 @@ function App() {
       return;
     }
 
+    const verifiedSessionId = sessionId;
     let cancelled = false;
 
     async function verifyPayment() {
       const response = await fetch(
-        `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
+        `/api/checkout/verify?session_id=${encodeURIComponent(verifiedSessionId)}`,
       );
       const data = await response.json();
 
