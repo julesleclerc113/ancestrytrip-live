@@ -7,6 +7,7 @@ interface __BaseEnv_Env {
 	STRIPE_SECRET_KEY: string;
 	STRIPE_WEBHOOK_SECRET: string;
 	GEMINI_API_KEY: string;
+	RESEND_API_KEY: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -19,7 +20,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "GEMINI_API_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "GEMINI_API_KEY" | "RESEND_API_KEY">> {}
 }
 
 // Begin runtime types
