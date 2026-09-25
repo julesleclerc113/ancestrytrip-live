@@ -1347,7 +1347,7 @@ async function getPaidCheckout(
 
   if (!isPaid) {
     return {
-      paid: false,
+      paid: false as const,
       status: session.payment_status || "unpaid",
       product: payment.product,
     };
@@ -1371,7 +1371,7 @@ async function getPaidCheckout(
     .run();
 
   return {
-    paid: true,
+    paid: true as const,
     paymentId: payment.id,
     product: payment.product,
     amountCents: payment.amount_cents,
