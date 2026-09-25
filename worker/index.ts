@@ -1723,7 +1723,17 @@ export default {
       }
 
       try {
-        await verifyStripeCheckout(env, sessionId);
+        const checkout = await getPaidCheckout(env, sessionId);
+
+        if (checkout.paid) {
+          ctx.waitUntil(
+            generateReportForPayment(
+              env,
+              checkout.paymentId,
+            ),
+          );
+        }
+
         return json({ received: true });
       } catch (error) {
         console.error(
@@ -1834,6 +1844,7 @@ export default {
           await verifyStripeCheckout(
             env,
             sessionId,
+            ctx,
           );
 
         return json(result);
