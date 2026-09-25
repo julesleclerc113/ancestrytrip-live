@@ -25,8 +25,6 @@ interface ReportPlace {
   location: string;
   why_it_matters: string;
   what_to_see: string;
-  research_value: string;
-  what_to_look_for: string;
 }
 
 interface ReportItineraryDay {
@@ -68,6 +66,7 @@ interface PaymentVerification {
   email?: string | null;
   tripId?: string;
   report?: HeritageReport;
+  reportStatus?: "generating" | "ready";
 }
 
 function App() {
@@ -107,30 +106,55 @@ function App() {
       return;
     }
 
-    fetch(
-      `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
-    )
-      .then(async (response) => {
-        const data = await response.json();
+    let cancelled = false;
 
-        if (!response.ok) {
-          throw new Error(
-            data.error || "Unable to verify your payment.",
-          );
-        }
+    async function verifyPayment() {
+      const response = await fetch(
+        `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
+      );
+      const data = await response.json();
 
-        setPayment(data);
-      })
-      .catch((err) => {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to verify your payment.",
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Unable to verify your payment.",
         );
-      })
-      .finally(() => {
-        setPaymentLoading(false);
-      });
+      }
+
+      if (cancelled) return;
+
+      setPayment(data);
+      setPaymentLoading(false);
+
+      if (data.paid && data.reportStatus === "generating") {
+        window.setTimeout(() => {
+          if (!cancelled) {
+            void verifyPayment().catch((err) => {
+              if (!cancelled) {
+                setError(
+                  err instanceof Error
+                    ? err.message
+                    : "Unable to prepare your report.",
+                );
+              }
+            });
+          }
+        }, 2500);
+      }
+    }
+
+    void verifyPayment().catch((err) => {
+      if (cancelled) return;
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to verify your payment.",
+      );
+      setPaymentLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateField(field: keyof typeof form, value: string) {
@@ -339,15 +363,6 @@ function App() {
                             {place.what_to_see}
                           </p>
 
-                          <p>
-                            <strong>Research value</strong>
-                            {place.research_value}
-                          </p>
-
-                          <p>
-                            <strong>What to look for</strong>
-                            {place.what_to_look_for}
-                          </p>
                         </article>
                       ))}
                     </div>
@@ -476,18 +491,11 @@ function App() {
                   </div>
                   <h1>Your payment was successful.</h1>
                   <p>
-                    Your payment has been confirmed, but the report is
-                    not available yet. Please refresh this page shortly.
+                    Your payment has been confirmed. We are finishing the
+                    research now; this page will update automatically.
                   </p>
 
-                  <button
-                    className="button button-dark"
-                    type="button"
-                    onClick={() => window.location.reload()}
-                  >
-                    Refresh report
-                    <span>-&gt;</span>
-                  </button>
+                  <div className="success-symbol">...</div>
                 </>
               ) : (
                 <>
