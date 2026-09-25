@@ -222,125 +222,212 @@ function normalizeHeritageReport(
   }
 
   const source = raw as Record<string, any>;
-  const place = source.place_resolution || {};
-  const evidence = source.evidence_evaluation || {};
+
+  const place =
+    source.place_resolution ||
+    source.geographic_resolution ||
+    {};
+
+  const evaluation =
+    source.family_research_evaluation ||
+    source.evidence_evaluation ||
+    source.investigation_and_evidence_chain ||
+    source.family_research_evaluation_and_evidence ||
+    {};
 
   const findings: ReportFinding[] = [];
 
-  for (const item of evidence.search_chain_results || []) {
-    if (!item || typeof item !== "object") continue;
+  const primaryTarget =
+    evaluation.primary_target;
+
+  if (
+    primaryTarget &&
+    typeof primaryTarget === "object"
+  ) {
+    const name = [
+      primaryTarget.given_name,
+      primaryTarget.surname,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     findings.push({
       finding:
-        item.finding ||
-        `${item.query || "Search"} produced no clearly established family connection.`,
+        primaryTarget.analysis ||
+        `Family research target${name ? `: ${name}` : ""}`,
       evidence:
-        item.source_consulted ||
-        "Research result reported by the investigation.",
+        primaryTarget.analysis ||
+        "The supplied family clue requires further documentary verification.",
       relevance:
-        item.status === "Negative result"
-          ? "This is useful negative evidence: it identifies what the current search did not establish."
-          : "This result should be followed up against the customer's family evidence.",
+        "This defines the identity and surname problem that the archival investigation needs to resolve.",
       confidence: "lead",
     });
   }
 
-  for (const item of evidence.surname_analysis?.variant_evaluation || []) {
-    if (!item || typeof item !== "object") continue;
-
+  if (evaluation.investigative_verdict) {
     findings.push({
       finding:
-        `Surname variant considered: ${item.variant || "unspecified"}`,
+        evaluation.evidence_chain_status ||
+        "Current research assessment",
       evidence:
-        item.assessment ||
-        "No assessment supplied.",
+        evaluation.investigative_verdict,
       relevance:
-        "This is a research hypothesis, not proof that the variant belongs to the customer's family.",
+        "This establishes the current documentary limit of the investigation and determines which primary sources should be checked next.",
       confidence: "lead",
     });
   }
 
-  if (evidence.factual_conclusion) {
+  if (evaluation.warning_on_false_positives) {
     findings.push({
-      finding: "Current research conclusion",
-      evidence: evidence.factual_conclusion,
+      finding: "False-positive warning",
+      evidence:
+        evaluation.warning_on_false_positives,
       relevance:
-        "This defines the current evidentiary limit and helps determine the next research step.",
+        "This prevents unrelated historical people with similar surnames from being treated as direct ancestors.",
       confidence: "lead",
     });
   }
+
+  const rawPlaces =
+    source.key_research_repositories ||
+    source.heritage_landscape_key_institutions ||
+    source.heritage_and_archival_landscape ||
+    source.research_landscape_and_repositories ||
+    source.key_heritage_and_archival_locations ||
+    [];
 
   const places: ReportPlace[] = (
-    source.research_landscape_and_repositories || []
+    Array.isArray(rawPlaces)
+      ? rawPlaces
+      : []
   )
     .filter(
       (item: any) =>
-        item && typeof item === "object",
+        item &&
+        typeof item === "object",
     )
     .map((item: any) => ({
       name:
-        item.institution_name ||
         item.name ||
+        item.institution_name ||
         "Research resource",
       location:
         item.address ||
         item.location ||
         trip.ancestral_place,
       why_it_matters:
+        item.holdings_and_purpose ||
+        item.research_relevance ||
         item.collection_relevance ||
         item.research_value ||
+        item.institutional_function ||
         "Relevant to the family-history investigation.",
       what_to_see:
+        item.access_details ||
+        item.holdings_and_purpose ||
+        item.target_records_to_examine ||
         item.description ||
-        item.collection_relevance ||
-        "Review the relevant collections and local historical material.",
+        item.target_records ||
+        "Review the relevant collections and historical material.",
     }))
     .slice(0, 8);
 
   const rawItinerary =
     source.itinerary ||
+    source.research_led_itinerary?.days ||
     source.three_day_heritage_itinerary ||
     source.five_day_heritage_itinerary ||
+    source.heritage_itinerary ||
     [];
 
   const itinerary: ReportItineraryDay[] = (
-    Array.isArray(rawItinerary) ? rawItinerary : []
+    Array.isArray(rawItinerary)
+      ? rawItinerary
+      : []
   )
     .filter(
       (item: any) =>
-        item && typeof item === "object",
+        item &&
+        typeof item === "object",
     )
     .map((item: any, index: number) => {
-      const morning = item.morning || {};
-      const afternoon = item.afternoon || {};
+      const morning =
+        item.morning || {};
+      const afternoon =
+        item.afternoon || {};
+      const evening =
+        item.evening || {};
 
-      const morningActions = Array.isArray(morning.actions)
-        ? morning.actions.join("; ")
-        : morning.actions || "";
+      const blockText = (
+        label: string,
+        block: any,
+      ) => {
+        if (
+          !block ||
+          typeof block !== "object"
+        ) {
+          return "";
+        }
 
-      const afternoonActions = Array.isArray(afternoon.actions)
-        ? afternoon.actions.join("; ")
-        : afternoon.actions || "";
+        return [
+          block.time
+            ? `${label} ${block.time}.`
+            : `${label}:`,
+          block.location
+            ? `Location: ${block.location}.`
+            : "",
+          block.action
+            ? `Action: ${block.action}.`
+            : "",
+          block.research_rationale
+            ? `Why it matters: ${block.research_rationale}`
+            : "",
+          block.investigative_value
+            ? `Why it matters: ${block.investigative_value}`
+            : "",
+          block.research_purpose
+            ? `Research purpose: ${block.research_purpose}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+      };
+
+      const eveningAction =
+        item.evening_action;
 
       const plan = [
-        morning.location
-          ? `Morning — ${morning.location}.`
+        item.objective
+          ? `Objective: ${item.objective}`
           : "",
-        morningActions
-          ? `Actions: ${morningActions}.`
-          : "",
-        morning.genealogical_purpose
-          ? `Research purpose: ${morning.genealogical_purpose}`
-          : "",
-        afternoon.location
-          ? `Afternoon — ${afternoon.location}.`
-          : "",
-        afternoonActions
-          ? `Actions: ${afternoonActions}.`
-          : "",
-        afternoon.genealogical_purpose
-          ? `Research purpose: ${afternoon.genealogical_purpose}`
-          : "",
+        blockText(
+          "Morning",
+          morning,
+        ),
+        blockText(
+          "Afternoon",
+          afternoon,
+        ),
+        blockText(
+          "Evening",
+          evening,
+        ),
+        eveningAction &&
+        typeof eveningAction === "object"
+          ? [
+              "Evening:",
+              eveningAction.task
+                ? `Task: ${eveningAction.task}.`
+                : "",
+              eveningAction.action
+                ? `Action: ${eveningAction.action}.`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : eveningAction
+            ? `Evening: ${eveningAction}`
+            : "",
       ]
         .filter(Boolean)
         .join(" ");
@@ -348,39 +435,79 @@ function normalizeHeritageReport(
       return {
         day:
           Number(item.day_number) ||
+          Number(item.day) ||
           index + 1,
         title:
+          item.theme ||
+          item.title ||
           item.objective ||
           `Heritage research day ${index + 1}`,
         plan,
       };
     });
 
-  const researchLeads: ReportResearchLead[] = (
-    source.actionable_next_steps || []
-  )
-    .filter(
-      (item: any) =>
-        item && typeof item === "object",
-    )
-    .map((item: any) => ({
-      lead:
-        item.action ||
-        item.lead ||
-        "Continue the family-history investigation.",
-      where_to_look:
-        item.where_to_look ||
-        item.institution ||
-        "Use the relevant archive or historical institution identified in the report.",
-      what_to_search:
-        item.detail ||
-        item.what_to_search ||
-        "Search for records that connect the family clue to a specific person, date and place.",
-    }));
+  const roadmap =
+    source.research_roadmap_and_next_steps ||
+    source.actionable_next_steps ||
+    source.actionable_next_steps_for_investigator ||
+    {};
+
+  const rawResearchLeads =
+    roadmap.concrete_investigation_steps ||
+    roadmap.crucial_next_steps_for_customer ||
+    roadmap.next_steps ||
+    (Array.isArray(roadmap)
+      ? roadmap
+      : []);
+
+  const researchLeads: ReportResearchLead[] =
+    Array.isArray(rawResearchLeads)
+      ? rawResearchLeads
+          .filter(
+            (item: any) =>
+              typeof item === "string" ||
+              (
+                item &&
+                typeof item === "object"
+              ),
+          )
+          .map((item: any) => {
+            if (
+              typeof item === "string"
+            ) {
+              return {
+                lead: item,
+                where_to_look:
+                  "Use the relevant archive, genealogy organisation, or historical repository identified in the report.",
+                what_to_search: item,
+              };
+            }
+
+            return {
+              lead:
+                item.action ||
+                item.lead ||
+                item.title ||
+                `Research step ${item.step || ""}`.trim(),
+              where_to_look:
+                item.where_to_look ||
+                item.institution ||
+                "Use the relevant archive or genealogy repository identified in the report.",
+              what_to_search:
+                item.detail ||
+                item.guidance ||
+                item.what_to_search ||
+                item.action ||
+                "Search for records connecting the family clue to a specific person, date, and place.",
+            };
+          })
+      : [];
 
   const practicalNotes: string[] = [];
 
-  if (Array.isArray(source.practical_notes)) {
+  if (
+    Array.isArray(source.practical_notes)
+  ) {
     practicalNotes.push(
       ...source.practical_notes.filter(
         (item: unknown): item is string =>
@@ -389,10 +516,52 @@ function normalizeHeritageReport(
     );
   }
 
+  if (place.postal_code) {
+    practicalNotes.push(
+      `Postal code: ${place.postal_code}.`,
+    );
+  }
+
+  if (place.department) {
+    practicalNotes.push(
+      `Department: ${place.department}.`,
+    );
+  }
+
+  if (place.region) {
+    practicalNotes.push(
+      `Region: ${place.region}.`,
+    );
+  }
+
   const caveats: string[] = [];
 
-  if (evidence.factual_conclusion) {
-    caveats.push(evidence.factual_conclusion);
+  if (evaluation.investigative_verdict) {
+    caveats.push(
+      evaluation.investigative_verdict,
+    );
+  }
+
+  if (
+    evaluation.evidence_chain_status &&
+    !caveats.includes(
+      evaluation.evidence_chain_status,
+    )
+  ) {
+    caveats.push(
+      evaluation.evidence_chain_status,
+    );
+  }
+
+  if (
+    evaluation.warning_on_false_positives &&
+    !caveats.includes(
+      evaluation.warning_on_false_positives,
+    )
+  ) {
+    caveats.push(
+      evaluation.warning_on_false_positives,
+    );
   }
 
   if (!trip.birth_year) {
@@ -407,26 +576,70 @@ function normalizeHeritageReport(
     );
   }
 
-  const historicalContext =
-    typeof place.archival_jurisdiction_summary === "string"
-      ? place.archival_jurisdiction_summary
+  const historicalJurisdictions =
+    place.historical_jurisdictions;
+
+  const jurisdictionText =
+    historicalJurisdictions &&
+    typeof historicalJurisdictions === "object"
+      ? Object.entries(
+          historicalJurisdictions,
+        )
+          .map(
+            ([key, value]) =>
+              `${key.replaceAll("_", " ")}: ${value}`,
+          )
+          .join("; ")
       : "";
+
+  const historicalParishes =
+    Array.isArray(
+      place.historical_parishes_pre_1792,
+    )
+      ? place.historical_parishes_pre_1792.join(
+          ", ",
+        )
+      : "";
+
+  const heritageContext = [
+    place.modern_municipality
+      ? `Modern municipality: ${place.modern_municipality}.`
+      : "",
+    place.historical_province
+      ? `Historical province: ${place.historical_province}.`
+      : "",
+    jurisdictionText
+      ? `Historical jurisdictions: ${jurisdictionText}.`
+      : "",
+    historicalParishes
+      ? `Historical parishes before 1792: ${historicalParishes}.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const familyConnection =
+    evaluation.investigative_verdict ||
+    evaluation.factual_conclusion ||
+    `The supplied ancestral place is ${trip.ancestral_place}, but the current evidence does not establish a specific family connection.`;
+
+  const introduction =
+    source.report_metadata?.research_editor_evaluation ||
+    `A research-led heritage journey focused on the family clue associated with ${trip.ancestral_place}.`;
 
   return {
     title:
+      source.report_metadata?.report_type ||
       source.title ||
       `Heritage research journey: ${
         place.modern_municipality ||
         trip.ancestral_place
       }`,
-    introduction:
-      evidence.investigative_summary ||
-      `A research-led heritage journey focused on the family clue associated with ${trip.ancestral_place}.`,
+    introduction,
     family_connection:
-      evidence.factual_conclusion ||
-      `The supplied ancestral place is ${trip.ancestral_place}, but the current evidence does not establish a specific family connection.`,
+      familyConnection,
     heritage_context:
-      historicalContext ||
+      heritageContext ||
       `The research focuses on the historical and archival landscape of ${
         place.modern_municipality ||
         trip.ancestral_place
@@ -665,6 +878,89 @@ For research leads, provide the actual institution or resource name and the spec
 
 The report should read like expert editorial work prepared specifically for this customer's clue.
 
+OUTPUT FORMAT
+
+Return exactly one JSON object with these top-level fields and no others:
+
+{
+  "title": "A specific report title for this family investigation",
+  "introduction": "A concise introduction explaining what was investigated and what the report can establish.",
+  "family_connection": "What the research establishes about the customer's family connection. Clearly state when the connection is unproven.",
+  "heritage_context": "Relevant historical, geographic and archival context for the ancestral place.",
+  "findings": [
+    {
+      "finding": "A specific research finding",
+      "evidence": "The evidence supporting that finding, including the source or record consulted where available.",
+      "relevance": "Why this finding matters to the customer's family investigation.",
+      "confidence": "verified"
+    }
+  ],
+  "places": [
+    {
+      "name": "Specific place, archive, institution, church, cemetery, district or landmark",
+      "location": "Specific address or location",
+      "why_it_matters": "Why this place matters to the family investigation.",
+      "what_to_see": "What the traveller should see, request, inspect or investigate there."
+    }
+  ],
+  "itinerary": [
+    {
+      "day": 1,
+      "title": "Specific day theme",
+      "plan": "Detailed research-led itinerary for this day, including locations, actions and evidence to investigate."
+    }
+  ],
+  "research_leads": [
+    {
+      "lead": "A specific unresolved research question or lead",
+      "where_to_look": "The actual archive, institution, database or resource to use.",
+      "what_to_search": "The specific person, surname, record type, date range or question to investigate."
+    }
+  ],
+  "practical_notes": [
+    "Specific practical information useful to the traveller."
+  ],
+    "caveats": [
+    "Important limitations, uncertainty or unverified connections."
+  ],
+  "sources": [
+    {
+      "title": "The title of the source",
+      "url": "https://example.com"
+    }
+  ]
+}
+
+FIELD RULES
+
+- Use exactly these top-level field names.
+- "sources" must be an array of the most important sources actually consulted during the research.
+- Each source must contain exactly "title" and "url".
+- Use real URLs from the research results.
+- Do not invent, guess or fabricate URLs.
+- Prefer primary sources such as archives, government records, churches, libraries, museums and official institutional websites.
+- Include only sources that materially support the findings or research leads.
+- Do not wrap the object inside another property such as "heritage_report", "report", "client_dossier", "customer_profile" or "geographic_resolution".
+- Do not create alternative field names.
+- Do not omit any of the top-level fields. Use an empty array when a list genuinely has no entries, including "sources".
+- "confidence" must be exactly one of: "verified", "probable", "lead".
+- A "verified" finding must be directly supported by the research evidence.
+- Use "probable" only when the evidence supports a reasonable but not fully established conclusion.
+- Use "lead" for unresolved possibilities or research directions.
+- Never invent a family relationship merely because a person has the same or similar surname.
+- Keep the distinction between established evidence, probable interpretation and research lead explicit.
+- Include actual institutions, places and record types wherever the research supports them.
+- The itinerary must be based on the research findings and places, not generic tourism advice.
+- Every source must contain both "title" and "url".
+- Every "url" must be a complete HTTP or HTTPS webpage URL.
+- Do not use URLs ending in image or media file extensions such as .jpg, .jpeg, .png, .gif, .webp or .pdf.
+- Do not use direct image links, screenshots, logos, maps or other media files as sources.
+- Do not include a source unless you have a real URL for it.
+- Never create a source with a missing or empty URL.
+- Do not duplicate the same URL.
+- Prefer the official webpage for an institution or archive rather than a deep link to an image or asset.
+- Sources must be webpages that support the research in this report, not merely names of institutions mentioned in the itinerary.
+
 Return JSON only.
 Do not use markdown fences.
 
@@ -720,7 +1016,6 @@ Do not use markdown fences.
     data.steps?.filter(
       (step) => step.type === "model_output",
     ) || [];
-
   const lastModelOutput =
     modelOutputs[modelOutputs.length - 1];
 
@@ -761,23 +1056,56 @@ Do not use markdown fences.
     trip,
   );
 
-  const sourceMap = new Map<string, ReportSource>();
+  const validSources = new Map<string, ReportSource>();
 
-  for (const step of modelOutputs) {
-    for (const item of step.content || []) {
-      for (const annotation of item.annotations || []) {
-        if (annotation.uri && annotation.title) {
-          sourceMap.set(annotation.uri, {
-            title: annotation.title,
-            url: annotation.uri,
-          });
-        }
-      }
+  for (const source of report.sources || []) {
+    if (
+      !source ||
+      typeof source.title !== "string" ||
+      typeof source.url !== "string"
+    ) {
+      continue;
     }
+
+    const title = source.title.trim();
+    const url = source.url.trim();
+
+    if (!title || !/^https?:\/\//i.test(url)) {
+      continue;
+    }
+
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      continue;
+    }
+
+    if (
+      parsedUrl.hostname
+        .toLowerCase()
+        .endsWith("vertexaisearch.cloud.google.com")
+    ) {
+      continue;
+    }
+
+    if (
+      /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico|pdf)(?:[?#].*)?$/i.test(
+        parsedUrl.pathname,
+      )
+    ) {
+      continue;
+    }
+
+    validSources.set(url, {
+      title,
+      url,
+    });
   }
 
   report.sources = Array.from(
-    sourceMap.values(),
+    validSources.values(),
   );
 
   return report;
