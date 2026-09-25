@@ -1715,6 +1715,21 @@ async function verifyStripeCheckout(
     }>();
 
   if (existingReport) {
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'fulfilled'
+      WHERE id = ?
+    `)
+      .bind(checkout.paymentId)
+      .run();
+
+    await sendReportReadyEmail(
+      env,
+      checkout.paymentId,
+      existingReport.id,
+      origin,
+    );
+
     return {
       ...checkout,
       reportId: existingReport.id,
