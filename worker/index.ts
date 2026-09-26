@@ -997,7 +997,7 @@ Do not use markdown fences.
         type?: string;
         text?: string;
         annotations?: Array<{
-          uri?: string;
+          url?: string;
           title?: string;
         }>;
       }>;
@@ -1042,7 +1042,7 @@ Do not use markdown fences.
     for (const item of step.content || []) {
       for (const annotation of item.annotations || []) {
         const title = annotation.title?.trim();
-        const url = annotation.uri?.trim();
+        const url = annotation.url?.trim();
 
         if (
           !title ||
