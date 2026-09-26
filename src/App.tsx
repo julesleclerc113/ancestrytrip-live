@@ -304,7 +304,10 @@ function App() {
     }
   }
 
-  if (window.location.pathname === "/success") {
+  if (
+    window.location.pathname === "/success" ||
+    window.location.pathname.startsWith("/report/")
+  ) {
     return (
       <div className="site-shell success-page">
         <header className="site-header">
