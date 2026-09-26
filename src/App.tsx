@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import "./App.css";
+import "./archival-theme.css";
 
 interface Preview {
   title: string;
