@@ -520,6 +520,17 @@ function App() {
                     </div>
                   )}
 
+                  <div className="report-actions" aria-label="Report actions">
+                    <button
+                      className="button button-dark"
+                      type="button"
+                      onClick={() => window.print()}
+                    >
+                      Save as PDF
+                      <span>-&gt;</span>
+                    </button>
+                  </div>
+
                   <div className="success-footer-note">
                     <span className="success-next-label">
                       ORDER CONFIRMED
