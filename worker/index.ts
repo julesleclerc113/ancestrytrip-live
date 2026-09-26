@@ -1035,6 +1035,68 @@ Do not use markdown fences.
     return fallback;
   }
 
+  const annotatedSources: ReportSource[] = [];
+  const annotatedSourceUrls = new Set<string>();
+
+  for (const step of modelOutputs) {
+    for (const item of step.content || []) {
+      for (const annotation of item.annotations || []) {
+        const title = annotation.title?.trim();
+        const url = annotation.uri?.trim();
+
+        if (
+          !title ||
+          !url ||
+          !/^https?:\/\//i.test(url) ||
+          annotatedSourceUrls.has(url)
+        ) {
+          continue;
+        }
+
+        let parsedUrl: URL;
+
+        try {
+          parsedUrl = new URL(url);
+        } catch {
+          continue;
+        }
+
+        if (
+          parsedUrl.hostname
+            .toLowerCase()
+            .endsWith("vertexaisearch.cloud.google.com")
+        ) {
+          continue;
+        }
+
+        if (
+          /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico|pdf)(?:[?#].*)?$/i.test(
+            parsedUrl.pathname,
+          )
+        ) {
+          continue;
+        }
+
+        annotatedSourceUrls.add(url);
+        annotatedSources.push({ title, url });
+
+        if (annotatedSources.length >= 12) {
+          break;
+        }
+      }
+
+      if (annotatedSources.length >= 12) {
+        break;
+      }
+    }
+
+    if (annotatedSources.length >= 12) {
+      break;
+    }
+  }
+
+
+
   let rawReport: unknown;
 
   try {
@@ -1055,6 +1117,13 @@ Do not use markdown fences.
     rawReport,
     trip,
   );
+
+  if (
+    report.sources.length === 0 &&
+    annotatedSources.length > 0
+  ) {
+    report.sources = annotatedSources;
+  }
 
   const validSources = new Map<string, ReportSource>();
 
