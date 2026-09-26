@@ -1592,3 +1592,405 @@ button:disabled {
     color: inherit;
   }
 }
+
+
+/* Report experience v2 */
+.report-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
+  gap: 28px;
+  margin: -8px -8px 34px;
+}
+.report-hero-copy,
+.report-hero-placeholder,
+.report-hero-image {
+  min-height: 390px;
+}
+.report-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 34px;
+  border-radius: 22px;
+  background: #e9e2d5;
+}
+.report-hero-copy h1 {
+  max-width: 760px;
+  margin: 12px 0 18px;
+  font-family: Georgia, serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 500;
+  line-height: .98;
+  letter-spacing: -.035em;
+}
+.report-hero-intro {
+  max-width: 650px;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.65;
+}
+.report-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 26px;
+}
+.report-hero-meta span,
+.report-section-count,
+.discovery-confidence {
+  border: 1px solid rgba(32, 42, 35, .16);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.report-hero-image {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 22px;
+  background: #d7d0c2;
+}
+.report-hero-image img,
+.report-gallery img,
+.journey-card > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.report-hero-image figcaption,
+.report-gallery figcaption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(20, 24, 20, .72);
+  color: #fff;
+  font-size: 11px;
+}
+.report-hero-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 75% 28%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+    linear-gradient(135deg, #d5cec1, #b8b0a2);
+}
+.report-hero-placeholder span {
+  font-size: 10px;
+  letter-spacing: .16em;
+}
+.report-hero-placeholder strong {
+  max-width: 320px;
+  font-family: Georgia, serif;
+  font-size: 38px;
+  line-height: 1.02;
+  font-weight: 500;
+}
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  margin-bottom: 76px;
+}
+.report-summary-card {
+  padding: 26px;
+  border: 1px solid rgba(32,42,35,.12);
+  border-radius: 16px;
+  background: #fff;
+}
+.report-summary-card-featured {
+  background: #202a23;
+  color: #fff;
+}
+.report-summary-card p {
+  margin: 14px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.report-summary-card-featured .report-kicker {
+  color: rgba(255,255,255,.6);
+}
+.report-section {
+  margin-top: 76px;
+}
+.report-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.report-section-head h2 {
+  max-width: 720px;
+  margin: 7px 0 0;
+  font-family: Georgia, serif;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+.report-section-count {
+  flex: 0 0 auto;
+  color: #59635b;
+}
+.discovery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.discovery-card {
+  position: relative;
+  min-height: 290px;
+  padding: 24px;
+  border-radius: 16px;
+  background: #f1ede5;
+}
+.discovery-number {
+  font-family: Georgia, serif;
+  font-size: 28px;
+  color: #687168;
+}
+.discovery-confidence {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  padding: 6px 8px;
+  font-size: 9px;
+}
+.discovery-card h3 {
+  margin: 44px 0 12px;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  line-height: 1.08;
+  font-weight: 500;
+}
+.discovery-card > p,
+.discovery-why p {
+  margin: 0;
+  line-height: 1.55;
+}
+.discovery-why {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(32,42,35,.13);
+}
+.discovery-why span,
+.next-grid article > div span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 9px;
+  letter-spacing: .13em;
+  color: #69736b;
+}
+.journey-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.journey-card {
+  overflow: hidden;
+  border: 1px solid rgba(32,42,35,.12);
+  border-radius: 16px;
+  background: #fff;
+}
+.journey-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.journey-index {
+  font-family: Georgia, serif;
+  font-size: 24px;
+}
+.journey-location {
+  overflow: hidden;
+  color: #687168;
+  font-size: 11px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.journey-card > img,
+.journey-image-placeholder {
+  height: 190px;
+}
+.journey-image-placeholder {
+  display: flex;
+  align-items: flex-end;
+  padding: 18px;
+  background: linear-gradient(135deg, #d8d1c5, #eee9df);
+}
+.journey-image-placeholder span {
+  max-width: 75%;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  line-height: 1.05;
+}
+.journey-card-body {
+  padding: 20px;
+}
+.journey-card-body h3 {
+  margin: 0 0 10px;
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 500;
+}
+.journey-card-body p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.journey-card-body .journey-matters {
+  font-weight: 600;
+}
+.report-gallery {
+  position: relative;
+}
+.report-image-grid {
+  display: grid;
+  grid-template-columns: 1.25fr .75fr;
+  grid-template-rows: 210px 210px;
+  gap: 12px;
+}
+.report-image-grid figure {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 14px;
+  background: #ddd7cc;
+}
+.report-image-grid figure:first-child {
+  grid-row: 1 / span 2;
+}
+.itinerary-modern {
+  border-top: 1px solid rgba(32,42,35,.16);
+}
+.itinerary-modern article {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(32,42,35,.16);
+}
+.itinerary-modern-day {
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: #687168;
+}
+.itinerary-modern h3 {
+  margin: 0 0 7px;
+  font-family: Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
+}
+.itinerary-modern p {
+  max-width: 760px;
+  margin: 0;
+  line-height: 1.6;
+}
+.next-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.next-grid article {
+  padding: 22px;
+  border: 1px solid rgba(32,42,35,.12);
+  border-radius: 14px;
+}
+.next-number {
+  font-family: Georgia, serif;
+  font-size: 25px;
+  color: #687168;
+}
+.next-grid h3 {
+  min-height: 52px;
+  margin: 25px 0;
+  font-family: Georgia, serif;
+  font-size: 23px;
+  font-weight: 500;
+}
+.next-grid article > div {
+  padding-top: 12px;
+  border-top: 1px solid rgba(32,42,35,.1);
+}
+.next-grid article > div + div {
+  margin-top: 12px;
+}
+.next-grid article > div p {
+  margin: 0;
+  line-height: 1.5;
+}
+.report-evidence {
+  padding-top: 28px;
+  border-top: 1px solid rgba(32,42,35,.16);
+}
+.report-sources {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.report-sources a {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 16px;
+  border: 1px solid rgba(32,42,35,.1);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+@media (max-width: 850px) {
+  .report-hero,
+  .report-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-hero-copy,
+  .report-hero-placeholder,
+  .report-hero-image {
+    min-height: 320px;
+  }
+  .discovery-grid,
+  .journey-strip,
+  .next-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-image-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 220px 160px;
+  }
+  .report-image-grid figure:first-child {
+    grid-row: auto;
+  }
+}
+@media (max-width: 560px) {
+  .report-hero {
+    margin: 0 0 28px;
+  }
+  .report-hero-copy {
+    padding: 24px;
+  }
+  .report-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .report-summary-grid {
+    margin-bottom: 48px;
+  }
+  .itinerary-modern article {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .report-image-grid,
+  .report-sources {
+    grid-template-columns: 1fr;
+  }
+}
