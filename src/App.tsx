@@ -670,51 +670,28 @@ function App() {
           </div>
 
           <div className="hero-visual">
-            <div className="paper-card">
-              <div className="paper-top">
-                <span>YOUR HERITAGE JOURNEY</span>
-                <span>01</span>
+            <div className="hero-image-frame">
+              <img
+                src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1800&q=85"
+                alt="A historic village landscape representing the places behind a family story"
+              />
+              <div className="hero-image-wash" />
+              <div className="hero-image-caption">
+                <span>HERITAGE / PLACE / MEMORY</span>
+                <strong>Go back to the places<br />that shaped your family.</strong>
               </div>
-
-              <div className="map-lines">
-                <span className="map-line line-one" />
-                <span className="map-line line-two" />
-                <span className="map-line line-three" />
-
-                <span className="map-dot dot-one" />
-                <span className="map-dot dot-two" />
-                <span className="map-dot dot-three" />
-              </div>
-
-              <div className="paper-content">
-                <span className="paper-label">
-                  FROM FAMILY TO PLACE
-                </span>
-
-                <h2>
-                  Discover the
-                  <br />
-                  story behind
-                  <br />
-                  <em>where you come from.</em>
-                </h2>
-
-                <div className="paper-route">
-                  <span>Family roots</span>
-                  <span className="route-arrow">-&gt;</span>
-                  <span>Places</span>
-                  <span className="route-arrow">-&gt;</span>
-                  <span>Your trip</span>
-                </div>
-              </div>
+              <div className="route-orbit route-orbit-one" />
+              <div className="route-orbit route-orbit-two" />
+              <span className="hero-map-pin pin-one" />
+              <span className="hero-map-pin pin-two" />
+              <span className="hero-map-pin pin-three" />
             </div>
 
             <div className="floating-note">
               <span className="note-icon">✦</span>
-
               <div>
-                <strong>Made around your story</strong>
-                <span>Not a generic travel guide.</span>
+                <strong>Research + journey</strong>
+                <span>Built around your family, not a template.</span>
               </div>
             </div>
           </div>
