@@ -25,6 +25,13 @@ interface ReportPlace {
   location: string;
   why_it_matters: string;
   what_to_see: string;
+  image_url?: string;
+}
+
+interface ReportImage {
+  url: string;
+  title: string;
+  source_url: string;
 }
 
 interface ReportItineraryDay {
@@ -56,6 +63,7 @@ interface HeritageReport {
   practical_notes: string[];
   caveats: string[];
   sources: ReportSource[];
+  images?: ReportImage[];
 }
 
 interface PaymentVerification {
@@ -68,6 +76,239 @@ interface PaymentVerification {
   reportId?: string;
   report?: HeritageReport;
   reportStatus?: "generating" | "ready";
+}
+
+
+function ReportExperience({
+  report,
+  product,
+  amountCents,
+}: {
+  report: HeritageReport;
+  product?: string;
+  amountCents?: number;
+}) {
+  const findings = report.findings || [];
+  const places = report.places || [];
+  const itinerary = report.itinerary || [];
+  const leads = report.research_leads || [];
+  const images = report.images || [];
+
+  const confidenceLabel = (confidence: ReportFinding["confidence"]) => {
+    if (confidence === "verified") return "VERIFIED";
+    if (confidence === "probable") return "PROBABLE";
+    return "RESEARCH LEAD";
+  };
+
+  return (
+    <>
+      <div className="report-hero">
+        <div className="report-hero-copy">
+          <div className="report-kicker">YOUR FAMILY JOURNEY</div>
+          <h1>{report.title}</h1>
+          <p className="report-hero-intro">{report.introduction}</p>
+          <div className="report-hero-meta">
+            <span>Research-led</span>
+            <span>Places to visit</span>
+            <span>Evidence & next steps</span>
+          </div>
+        </div>
+        {images[0] ? (
+          <figure className="report-hero-image">
+            <img src={images[0].url} alt={images[0].title} loading="eager" />
+            <figcaption>{images[0].title}</figcaption>
+          </figure>
+        ) : (
+          <div className="report-hero-placeholder" aria-hidden="true">
+            <span>FAMILY / PLACE</span>
+            <strong>Where the story<br />becomes a journey.</strong>
+          </div>
+        )}
+      </div>
+
+      <div className="report-summary-grid">
+        <section className="report-summary-card report-summary-card-featured">
+          <div className="report-kicker">THE CONNECTION</div>
+          <p>{report.family_connection}</p>
+        </section>
+        <section className="report-summary-card">
+          <div className="report-kicker">THE SETTING</div>
+          <p>{report.heritage_context}</p>
+        </section>
+      </div>
+
+      {findings.length > 0 && (
+        <section className="report-section report-discoveries">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">WHAT WE DISCOVERED</div>
+              <h2>The evidence, distilled.</h2>
+            </div>
+            <span className="report-section-count">{findings.length} findings</span>
+          </div>
+          <div className="discovery-grid">
+            {findings.map((finding, index) => (
+              <article className="discovery-card" key={finding.finding + index}>
+                <div className="discovery-number">{String(index + 1).padStart(2, "0")}</div>
+                <div className="discovery-confidence">{confidenceLabel(finding.confidence)}</div>
+                <h3>{finding.finding}</h3>
+                <p>{finding.evidence}</p>
+                <div className="discovery-why">
+                  <span>WHY IT MATTERS</span>
+                  <p>{finding.relevance}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="report-section report-journey">
+        <div className="report-section-head">
+          <div>
+            <div className="report-kicker">YOUR JOURNEY</div>
+            <h2>Follow the research on the ground.</h2>
+          </div>
+          <span className="report-section-count">{places.length} places</span>
+        </div>
+        <div className="journey-strip">
+          {places.map((place, index) => (
+            <article className="journey-card" key={place.name + place.location}>
+              <div className="journey-card-top">
+                <span className="journey-index">{String(index + 1).padStart(2, "0")}</span>
+                <span className="journey-location">{place.location}</span>
+              </div>
+              {place.image_url ? (
+                <img src={place.image_url} alt="" loading="lazy" />
+              ) : (
+                <div className="journey-image-placeholder" aria-hidden="true">
+                  <span>{place.name}</span>
+                </div>
+              )}
+              <div className="journey-card-body">
+                <h3>{place.name}</h3>
+                <p className="journey-matters">{place.why_it_matters}</p>
+                <p>{place.what_to_see}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {images.length > 1 && (
+        <section className="report-section report-gallery">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">THE PLACE TODAY</div>
+              <h2>A visual sense of the journey.</h2>
+            </div>
+          </div>
+          <div className="report-image-grid">
+            {images.slice(1, 5).map((image, index) => (
+              <figure key={image.url + index}>
+                <img src={image.url} alt={image.title} loading="lazy" />
+                <figcaption>{image.title}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {itinerary.length > 0 && (
+        <section className="report-section report-itinerary-modern">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">YOUR ITINERARY</div>
+              <h2>A route built around your roots.</h2>
+            </div>
+          </div>
+          <div className="itinerary-modern">
+            {itinerary.map((day) => (
+              <article key={day.day}>
+                <div className="itinerary-modern-day">DAY {day.day}</div>
+                <div>
+                  <h3>{day.title}</h3>
+                  <p>{day.plan}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {leads.length > 0 && (
+        <section className="report-section report-next">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">WHAT TO DO NEXT</div>
+              <h2>Turn today's clues into tomorrow's discoveries.</h2>
+            </div>
+          </div>
+          <div className="next-grid">
+            {leads.map((lead, index) => (
+              <article key={lead.lead + index}>
+                <span className="next-number">{String(index + 1).padStart(2, "0")}</span>
+                <h3>{lead.lead}</h3>
+                <div>
+                  <span>WHERE TO LOOK</span>
+                  <p>{lead.where_to_look}</p>
+                </div>
+                <div>
+                  <span>WHAT TO SEARCH</span>
+                  <p>{lead.what_to_search}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="report-bottom-grid">
+        <section className="report-mini-card">
+          <div className="report-kicker">PRACTICAL NOTES</div>
+          <ul>{(report.practical_notes || []).map((note) => <li key={note}>{note}</li>)}</ul>
+        </section>
+        <section className="report-mini-card">
+          <div className="report-kicker">IMPORTANT LIMITS</div>
+          <ul>{(report.caveats || []).map((caveat) => <li key={caveat}>{caveat}</li>)}</ul>
+        </section>
+      </div>
+
+      {report.sources.length > 0 && (
+        <section className="report-section report-evidence">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">SOURCES & EVIDENCE</div>
+              <h2>Research you can follow yourself.</h2>
+            </div>
+            <span className="report-section-count">{report.sources.length} sources</span>
+          </div>
+          <div className="report-sources">
+            {report.sources.map((source) => (
+              <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>
+                <span>{source.title}</span>
+                <span>→</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="report-actions" aria-label="Report actions">
+        <button className="button button-dark" type="button" onClick={() => window.print()}>
+          Save as PDF <span>→</span>
+        </button>
+      </div>
+
+      <div className="success-footer-note">
+        <span className="success-next-label">ORDER CONFIRMED</span>
+        <p>
+          Paid for {product === "deep" ? "Deep Heritage Trip" : "Heritage Trip"} - EUR{" "}
+          {((amountCents || 0) / 100).toFixed(2)}.
+        </p>
+      </div>
+    </>
+  );
 }
 
 function App() {
@@ -333,226 +574,11 @@ function App() {
                   </p>
                 </>
               ) : payment?.paid && payment.report ? (
-                <>
-                  <div className="success-symbol">OK</div>
-
-                  <div className="kicker">
-                    YOUR HERITAGE TRIP
-                  </div>
-
-                  <h1>{payment.report.title}</h1>
-
-                  <p className="success-lead">
-                    {payment.report.introduction}
-                  </p>
-
-                  <div className="report-section">
-                    <div className="report-kicker">
-                      YOUR FAMILY CONNECTION
-                    </div>
-                    <p>{payment.report.family_connection}</p>
-                  </div>
-
-                  <div className="report-section">
-                    <div className="report-kicker">
-                      HERITAGE CONTEXT
-                    </div>
-                    <p>{payment.report.heritage_context}</p>
-                  </div>
-
-                  {payment.report.findings && payment.report.findings.length > 0 ? (
-                    <div className="report-section">
-                      <div className="report-kicker">
-                        WHAT WE FOUND
-                      </div>
-
-                      <h2>Research findings tied to your clue.</h2>
-
-                      <div className="report-findings">
-                        {(payment.report.findings || []).map((finding) => (
-                        <article key={finding.finding}>
-                          <div className="report-finding-top">
-                            <h3>{finding.finding}</h3>
-                            <span>{finding.confidence}</span>
-                          </div>
-
-                          <p>
-                            <strong>Evidence</strong>
-                            {finding.evidence}
-                          </p>
-
-                          <p>
-                            <strong>Why it matters</strong>
-                            {finding.relevance}
-                          </p>
-                        </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="report-section">
-                    <div className="report-heading">
-                      <div>
-                        <div className="report-kicker">
-                          PLACES TO EXPLORE
-                        </div>
-                        <h2>Follow the story on the ground.</h2>
-                      </div>
-                    </div>
-
-                    <div className="report-place-list">
-                      {(payment.report.places || []).map((place) => (
-                        <article
-                          className="report-place"
-                          key={`${place.name}-${place.location}`}
-                        >
-                          <div className="report-place-top">
-                            <h3>{place.name}</h3>
-                            <span>{place.location}</span>
-                          </div>
-
-                          <p>
-                            <strong>Why it matters</strong>
-                            {place.why_it_matters}
-                          </p>
-
-                          <p>
-                            <strong>What to see</strong>
-                            {place.what_to_see}
-                          </p>
-
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="report-section">
-                    <div className="report-kicker">
-                      YOUR ITINERARY
-                    </div>
-
-                    <h2>A journey built around your roots.</h2>
-
-                    <div className="report-itinerary">
-                      {(payment.report.itinerary || []).map((day) => (
-                        <article key={day.day}>
-                          <span className="itinerary-day">
-                            DAY {day.day}
-                          </span>
-                          <div>
-                            <h3>{day.title}</h3>
-                            <p>{day.plan}</p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="report-section">
-                    <div className="report-kicker">
-                      RESEARCH LEADS
-                    </div>
-
-                    <h2>What to investigate next.</h2>
-
-                    <div className="report-leads">
-                      {(payment.report.research_leads || []).map((lead) => (
-                        <article key={lead.lead}>
-                          <h3>{lead.lead}</h3>
-                          <p>
-                            <strong>Where to look</strong>
-                            {lead.where_to_look}
-                          </p>
-                          <p>
-                            <strong>What to search</strong>
-                            {lead.what_to_search}
-                          </p>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="report-bottom-grid">
-                    <div className="report-mini-card">
-                      <div className="report-kicker">
-                        PRACTICAL NOTES
-                      </div>
-
-                      <ul>
-                        {(payment.report.practical_notes || []).map((note) => (
-                          <li key={note}>{note}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="report-mini-card">
-                      <div className="report-kicker">
-                        IMPORTANT CAVEATS
-                      </div>
-
-                      <ul>
-                        {(payment.report.caveats || []).map((caveat) => (
-                          <li key={caveat}>{caveat}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {payment.report.sources.length > 0 && (
-                    <div className="report-section">
-                      <div className="report-kicker">
-                        SOURCES
-                      </div>
-
-                      <h2>Research used for this journey.</h2>
-
-                      <div className="report-sources">
-                        {payment.report.sources.map((source) => (
-                          <a
-                            href={source.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            key={source.url}
-                          >
-                            <span>{source.title}</span>
-                            <span>-&gt;</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="report-actions" aria-label="Report actions">
-                    <button
-                      className="button button-dark"
-                      type="button"
-                      onClick={() => window.print()}
-                    >
-                      Save as PDF
-                      <span>-&gt;</span>
-                    </button>
-                  </div>
-
-                  <div className="success-footer-note">
-                    <span className="success-next-label">
-                      ORDER CONFIRMED
-                    </span>
-                    <p>
-                      Paid for{" "}
-                      {payment.product === "deep"
-                        ? "Deep Heritage Trip"
-                        : "Heritage Trip"}{" "}
-                      - EUR{" "}
-                      {((payment.amountCents || 0) / 100).toFixed(2)}.
-                    </p>
-                  </div>
-
-                  <a className="button button-dark" href="/">
-                    Back to AncestryTrip
-                    <span>-&gt;</span>
-                  </a>
-                </>
+                <ReportExperience
+                  report={payment.report}
+                  product={payment.product}
+                  amountCents={payment.amountCents}
+                />
               ) : payment?.paid ? (
                 <>
                   <div className="success-symbol">OK</div>
