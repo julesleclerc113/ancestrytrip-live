@@ -1,0 +1,251 @@
+/* AncestryTrip archival palette + full-bleed motion layer */
+:root {
+  --at-navy: #0b1d32;
+  --at-navy-2: #122b46;
+  --at-navy-3: #183b5c;
+  --at-cream: #f3ead7;
+  --at-cream-2: #e8dcc4;
+  --at-paper: #faf5e9;
+  --at-gold: #b18a43;
+  --at-gold-light: #d2b46f;
+  --at-ink: #17283a;
+}
+
+.site-shell:not(.success-page) {
+  --deep: var(--at-navy);
+  --deep-2: var(--at-navy-2);
+  --paper: var(--at-cream);
+  background:
+    radial-gradient(circle at 12% 4%, rgba(177,138,67,.16), transparent 30rem),
+    linear-gradient(180deg, var(--at-navy) 0 42%, var(--at-cream) 42% 100%);
+}
+
+.site-shell:not(.success-page) .site-header {
+  background: linear-gradient(180deg, rgba(11,29,50,.94), rgba(11,29,50,.42));
+  border-bottom-color: rgba(243,234,215,.16);
+}
+
+.site-shell:not(.success-page) .logo,
+.site-shell:not(.success-page) .header-link {
+  color: var(--at-cream);
+}
+
+.site-shell:not(.success-page) .logo-mark {
+  background: var(--at-gold);
+  color: var(--at-navy);
+  border: 0;
+}
+
+.site-shell:not(.success-page) .hero {
+  background:
+    radial-gradient(circle at 76% 34%, rgba(210,180,111,.17), transparent 27rem),
+    radial-gradient(circle at 8% 90%, rgba(24,59,92,.8), transparent 25rem),
+    linear-gradient(135deg, var(--at-navy), var(--at-navy-2));
+}
+
+.site-shell:not(.success-page) .hero-copy .kicker {
+  color: var(--at-gold-light);
+}
+
+.site-shell:not(.success-page) .hero-copy .kicker-dot {
+  background: var(--at-gold-light);
+  box-shadow: 0 0 0 6px rgba(210,180,111,.12);
+}
+
+.site-shell:not(.success-page) .hero h1 {
+  color: var(--at-cream);
+}
+
+.site-shell:not(.success-page) .hero h1 em,
+.site-shell:not(.success-page) .hero .route-arrow {
+  color: var(--at-gold-light);
+}
+
+.site-shell:not(.success-page) .button-dark {
+  background: var(--at-cream);
+  color: var(--at-navy);
+}
+
+.site-shell:not(.success-page) .button-dark:hover:not(:disabled) {
+  background: var(--at-gold-light);
+  box-shadow: 0 20px 55px rgba(0,0,0,.28);
+}
+
+.site-shell:not(.success-page) .hero-image-frame {
+  border-color: rgba(210,180,111,.35);
+  box-shadow: 0 35px 100px rgba(0,0,0,.38);
+}
+
+.site-shell:not(.success-page) .hero-image-frame:hover {
+  box-shadow: 0 45px 125px rgba(0,0,0,.48);
+}
+
+.site-shell:not(.success-page) .hero-image-wash {
+  background:
+    linear-gradient(180deg, rgba(11,29,50,.04) 18%, rgba(11,29,50,.86) 100%),
+    linear-gradient(90deg, rgba(11,29,50,.55), transparent 68%);
+}
+
+.site-shell:not(.success-page) .route-orbit {
+  border-color: rgba(210,180,111,.72);
+}
+
+.site-shell:not(.success-page) .hero-map-pin {
+  border-color: var(--at-navy);
+  background: var(--at-gold-light);
+  box-shadow: 0 0 0 7px rgba(210,180,111,.2);
+}
+
+.site-shell:not(.success-page) .floating-note {
+  background: var(--at-paper);
+  color: var(--at-ink);
+}
+
+.site-shell:not(.success-page) .note-icon {
+  background: var(--at-cream-2);
+  color: var(--at-gold);
+}
+
+.site-shell:not(.success-page) .story-strip,
+.site-shell:not(.success-page) .site-footer {
+  background: var(--at-navy);
+}
+
+.site-shell:not(.success-page) .strip-number {
+  color: var(--at-gold-light);
+}
+
+.site-shell:not(.success-page) .section,
+.site-shell:not(.success-page) .pricing-section {
+  background: var(--at-cream);
+  color: var(--at-ink);
+}
+
+.site-shell:not(.success-page) .section-intro h2 em,
+.site-shell:not(.success-page) .pricing-heading h2 em,
+.site-shell:not(.success-page) .form-intro h2 em {
+  color: var(--at-gold);
+}
+
+.site-shell:not(.success-page) .step-card {
+  background: var(--at-paper);
+  border-color: rgba(11,29,50,.12);
+}
+
+.site-shell:not(.success-page) .step-card:hover,
+.site-shell:not(.success-page) .price-card:hover {
+  box-shadow: 0 28px 60px rgba(11,29,50,.13);
+}
+
+.site-shell:not(.success-page) .featured-step,
+.site-shell:not(.success-page) .dark-price-card {
+  background: var(--at-navy-2);
+  color: var(--at-cream);
+}
+
+.site-shell:not(.success-page) .start-section {
+  background:
+    linear-gradient(rgba(11,29,50,.93), rgba(11,29,50,.93)),
+    url("https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2000&q=80") center/cover;
+}
+
+.site-shell:not(.success-page) .form-panel {
+  background: rgba(243,234,215,.055);
+  border-color: rgba(210,180,111,.2);
+}
+
+.site-shell:not(.success-page) .trip-form {
+  background: var(--at-paper);
+}
+
+.site-shell:not(.success-page) .preview-section {
+  background: var(--at-navy);
+}
+
+.site-shell:not(.success-page) .preview-section .preview-cta {
+  background: var(--at-cream);
+  color: var(--at-navy);
+}
+
+.site-shell:not(.success-page) .preview-cta h3 em {
+  color: var(--at-gold);
+}
+
+.site-shell:not(.success-page) .pricing-section {
+  background:
+    radial-gradient(circle at 92% 18%, rgba(177,138,67,.1), transparent 24rem),
+    var(--at-cream);
+}
+
+.site-shell:not(.success-page) .price-card {
+  background: var(--at-paper);
+  border-color: rgba(11,29,50,.1);
+}
+
+.site-shell:not(.success-page) .dark-price-card {
+  background: var(--at-navy-2);
+}
+
+.site-shell:not(.success-page) .site-footer .logo-mark {
+  background: var(--at-gold);
+}
+
+/* Make every major homepage band genuinely edge-to-edge. */
+.site-shell:not(.success-page) main,
+.site-shell:not(.success-page) .hero,
+.site-shell:not(.success-page) .story-strip,
+.site-shell:not(.success-page) .section,
+.site-shell:not(.success-page) .site-footer {
+  width: 100%;
+  max-width: none;
+}
+
+/* Give the page a little more movement without turning it into a gimmick. */
+.site-shell:not(.success-page) .hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -180px;
+  height: 320px;
+  pointer-events: none;
+  background: radial-gradient(ellipse, rgba(177,138,67,.16), transparent 65%);
+  animation: ancestry-glow 7s ease-in-out infinite alternate;
+}
+
+.site-shell:not(.success-page) .story-strip {
+  box-shadow: 0 -1px 0 rgba(210,180,111,.16), 0 18px 50px rgba(11,29,50,.16);
+}
+
+.site-shell:not(.success-page) .story-strip div {
+  transition: transform .35s ease, color .35s ease;
+}
+
+.site-shell:not(.success-page) .story-strip div:hover {
+  transform: translateX(6px);
+  color: var(--at-cream);
+}
+
+.site-shell:not(.success-page) .step-card:nth-child(2) {
+  animation: ancestry-card-float 6s ease-in-out infinite;
+}
+
+.site-shell:not(.success-page) .step-card:nth-child(3) {
+  animation: ancestry-card-float 6s 1.2s ease-in-out infinite;
+}
+
+@keyframes ancestry-glow {
+  from { transform: translateX(-4%); opacity: .55; }
+  to { transform: translateX(4%); opacity: 1; }
+}
+
+@keyframes ancestry-card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-shell:not(.success-page) .hero::after,
+  .site-shell:not(.success-page) .step-card:nth-child(2),
+  .site-shell:not(.success-page) .step-card:nth-child(3) {
+    animation: none;
+  }
+}
