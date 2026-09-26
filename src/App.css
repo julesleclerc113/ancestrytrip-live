@@ -1518,3 +1518,77 @@ button:disabled {
     gap: 8px;
   }
 }
+
+
+.report-actions {
+  margin-top: 28px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  html {
+    background: #fff;
+  }
+
+  body {
+    background: #fff;
+    color: #202a23;
+  }
+
+  .site-header,
+  .report-actions,
+  .success-footer-note,
+  .button {
+    display: none !important;
+  }
+
+  .site-shell,
+  .success-page {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .success-section {
+    width: 100%;
+    margin: 0;
+  }
+
+  .success-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .success-card h1 {
+    font-size: 32pt;
+  }
+
+  .report-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-findings article,
+  .report-place,
+  .report-leads article,
+  .report-mini-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-sources a {
+    color: #202a23;
+  }
+
+  a {
+    color: inherit;
+  }
+}
