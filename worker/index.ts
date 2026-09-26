@@ -55,6 +55,12 @@ interface ReportSource {
   url: string;
 }
 
+interface ReportImage {
+  url: string;
+  title: string;
+  source_url: string;
+}
+
 interface HeritageReport {
   title: string;
   introduction: string;
@@ -67,6 +73,7 @@ interface HeritageReport {
   practical_notes: string[];
   caveats: string[];
   sources: ReportSource[];
+  images?: ReportImage[];
 }
 
 const PRODUCTS = {
@@ -196,6 +203,7 @@ function buildFallbackReport(
       "Original records should be checked before drawing genealogical conclusions.",
     ],
     sources: [],
+    images: [],
   };
 }
 
@@ -928,6 +936,13 @@ Return exactly one JSON object with these top-level fields and no others:
       "title": "The title of the source",
       "url": "https://example.com"
     }
+  ],
+  "images": [
+    {
+      "url": "https://example.com/real-image.jpg",
+      "title": "A concise description of the place shown",
+      "source_url": "https://example.com/page-about-the-place"
+    }
   ]
 }
 
@@ -935,6 +950,10 @@ FIELD RULES
 
 - Use exactly these top-level field names.
 - "sources" must be an array of the most important sources actually consulted during the research.
+- "images" must be an array. It is optional research metadata used to enrich the visual report; if you cannot identify a real image URL from a consulted webpage, return an empty array.
+- Never invent an image URL. Only use image URLs actually present on a consulted webpage, and pair each image with the webpage URL in "source_url".
+- Prefer 2-4 representative place images from official archive, museum, heritage, municipal, library or established institutional pages.
+- Keep image URLs separate from "sources"; sources remain normal webpages.
 - Each source must contain exactly "title" and "url".
 - Use real URLs from the research results.
 - Do not invent, guess or fabricate URLs.
@@ -1177,7 +1196,65 @@ Do not use markdown fences.
     validSources.values(),
   );
 
-  return report;
+  return await hydrateReportImages(report);
+}
+
+
+async function hydrateReportImages(report: HeritageReport): Promise<HeritageReport> {
+  const sources = (report.sources || []).slice(0, 6);
+  const images: ReportImage[] = [];
+
+  for (const source of sources) {
+    if (images.length >= 4) break;
+
+    try {
+      const response = await fetch(source.url, {
+        headers: {
+          "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) continue;
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/html")) continue;
+
+      const html = (await response.text()).slice(0, 800000);
+      const imageMatch = html.match(
+        /<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+      ) || html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:image["'][^"']*["'][^>]*>/i,
+      );
+
+      if (!imageMatch?.[1]) continue;
+
+      let imageUrl: URL;
+      try {
+        imageUrl = new URL(imageMatch[1], source.url);
+      } catch {
+        continue;
+      }
+
+      if (!/^https?:$/i.test(imageUrl.protocol)) continue;
+
+      const normalized = imageUrl.toString();
+      if (images.some((image) => image.url === normalized)) continue;
+
+      images.push({
+        url: normalized,
+        title: source.title,
+        source_url: source.url,
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return {
+    ...report,
+    images,
+  };
 }
 
 async function verifyStripeWebhookSignature(
