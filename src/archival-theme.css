@@ -1533,7 +1533,7 @@
    pin's local coordinate system so its visual arrow stays anchored to the marker. */
 .site-shell.success-page .research-map-tooltip {
   position: absolute;
-  left: calc(50% + 30px);
+  left: calc(50% + 14px);
   bottom: calc(100% + 4px);
   width: min(260px, 42vw);
   padding: 15px 17px;
