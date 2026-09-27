@@ -1072,7 +1072,7 @@ function App() {
                   >
                     {checkoutLoading === "heritage"
                       ? "Opening checkout..."
-                      : "Heritage Trip - EUR 19"}
+                      : "Heritage Trip - 19 €"}
 
                     <span>-&gt;</span>
                   </button>
@@ -1085,7 +1085,7 @@ function App() {
                   >
                     {checkoutLoading === "deep"
                       ? "Opening checkout..."
-                      : "Deep Heritage Trip - EUR 49"}
+                      : "Deep Heritage Trip - 49 €"}
 
                     <span>-&gt;</span>
                   </button>
@@ -1114,7 +1114,7 @@ function App() {
                 </span>
 
                 <div className="price">
-                  EUR 19 <span>one-time</span>
+                  19 € <span>one-time</span>
                 </div>
 
                 <p>
@@ -1137,7 +1137,7 @@ function App() {
                 </span>
 
                 <div className="price">
-                  EUR 49 <span>one-time</span>
+                  49 € <span>one-time</span>
                 </div>
 
                 <p>
