@@ -511,3 +511,11 @@
   max-width: none;
   border-inline: 0;
 }
+
+
+/* Keep the heritage visual typography clean: no decorative grid lines behind the copy. */
+.site-shell:not(.success-page) .heritage-visual-band::before {
+  background:
+    radial-gradient(circle at 12% 20%, rgba(177,138,67,.13), transparent 22rem);
+  background-size: auto;
+}
