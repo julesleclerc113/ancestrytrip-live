@@ -1520,6 +1520,28 @@
   transform: rotate(45deg);
 }
 
+.site-shell.success-page .research-map-caption > span {
+  display: block;
+  color: var(--at-gold) !important;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-align: center;
+}
+
+/* Keep the first research card fully inside the map by opening it below and to the right. */
+.site-shell.success-page .research-map-pin:first-child .research-map-tooltip {
+  top: calc(100% + 16px);
+  bottom: auto;
+  left: calc(50% + 46px);
+  transform: translate(-50%, -8px) rotate(45deg);
+}
+
+.site-shell.success-page .research-map-pin:first-child:hover .research-map-tooltip,
+.site-shell.success-page .research-map-pin:first-child:focus-visible .research-map-tooltip {
+  transform: translate(-50%, 0) rotate(45deg);
+}
+
 .site-shell.success-page .research-map-tooltip {
   position: absolute;
   left: 50%;
