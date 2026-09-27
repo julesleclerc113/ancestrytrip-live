@@ -103,17 +103,10 @@ function ReportExperience({
     ? [selectedPlace.name, selectedPlace.location].filter(Boolean).join(", ")
     : "";
 
-  const mapEmbedUrl = selectedPlace
-    ? selectedPlace.map_url &&
-      /google\.[^/]+\/maps/i.test(selectedPlace.map_url)
-      ? selectedPlace.map_url +
-        (selectedPlace.map_url.includes("?") ? "&" : "?") +
-        "output=embed"
-      : selectedPlaceQuery
-        ? "https://www.google.com/maps?q=" +
-          encodeURIComponent(selectedPlaceQuery) +
-          "&output=embed"
-        : ""
+  const mapEmbedUrl = selectedPlaceQuery
+    ? "https://www.google.com/maps?q=" +
+      encodeURIComponent(selectedPlaceQuery) +
+      "&output=embed"
     : "";
 
   function selectMapPlace(index: number) {
