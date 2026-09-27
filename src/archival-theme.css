@@ -541,3 +541,46 @@
     background-repeat: no-repeat;
   }
 }
+
+
+/* Stronger heritage imagery for the pricing and process sections. */
+.site-shell:not(.success-page) .pricing-section {
+  background-image:
+    linear-gradient(rgba(243,234,215,.10), rgba(243,234,215,.20)),
+    url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=88");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.site-shell:not(.success-page) .how-section {
+  position: relative;
+  padding: clamp(72px, 8vw, 120px) clamp(22px, 5vw, 70px);
+  background-image:
+    linear-gradient(rgba(243,234,215,.16), rgba(243,234,215,.30)),
+    url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2200&q=88");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 0;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro,
+.site-shell:not(.success-page) .how-section .steps-grid {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .pricing-section {
+    background-image:
+      linear-gradient(rgba(243,234,215,.16), rgba(243,234,215,.28)),
+      url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=88");
+  }
+
+  .site-shell:not(.success-page) .how-section {
+    background-image:
+      linear-gradient(rgba(243,234,215,.18), rgba(243,234,215,.32)),
+      url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=88");
+  }
+}
