@@ -728,3 +728,126 @@
     background-position: center center;
   }
 }
+
+
+/* Refined How It Works composition: lighter type, smaller cards, more visible Portofino harbour. */
+.site-shell:not(.success-page) .how-section {
+  grid-template-columns: 1fr;
+  min-height: 720px;
+  gap: 34px;
+  padding: clamp(70px, 8vw, 100px) clamp(22px, 5vw, 70px);
+  align-content: center;
+  justify-items: center;
+  background-position: center center;
+}
+
+.site-shell:not(.success-page) .how-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8,24,39,.12) 0%,
+    rgba(8,24,39,.03) 42%,
+    rgba(8,24,39,.20) 100%
+  );
+  pointer-events: none;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro {
+  width: min(760px, 100%);
+  text-align: center;
+  z-index: 2;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro .kicker {
+  color: #f0d39b;
+  text-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+
+.site-shell:not(.success-page) .how-section .section-intro h2 {
+  color: #fffaf0;
+  text-shadow: 0 3px 20px rgba(0,0,0,.45);
+}
+
+.site-shell:not(.success-page) .how-section .section-intro h2 em {
+  color: #f0d39b;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro p {
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+  color: rgba(255,250,240,.92);
+  text-shadow: 0 2px 12px rgba(0,0,0,.48);
+}
+
+.site-shell:not(.success-page) .how-section .steps-grid {
+  width: min(980px, 100%);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  z-index: 2;
+}
+
+.site-shell:not(.success-page) .how-section .step-card {
+  min-height: 190px;
+  padding: 19px 20px 20px;
+  border: 1px solid rgba(255,250,240,.55);
+  border-radius: 16px;
+  background: rgba(248,241,227,.88);
+  box-shadow: 0 18px 42px rgba(7,24,38,.20);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.site-shell:not(.success-page) .how-section .featured-step {
+  background: rgba(239,230,207,.92);
+  transform: translateY(-10px);
+}
+
+.site-shell:not(.success-page) .how-section .step-number {
+  color: #8d6a3c;
+}
+
+.site-shell:not(.success-page) .how-section .step-icon {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  margin-top: auto;
+  margin-bottom: 16px;
+  font-size: 1.05rem;
+}
+
+.site-shell:not(.success-page) .how-section .step-card h3 {
+  color: #17231d;
+  margin-bottom: 6px;
+}
+
+.site-shell:not(.success-page) .how-section .step-card p {
+  color: #425048;
+  font-size: .82rem;
+  line-height: 1.48;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .how-section {
+    min-height: auto;
+    gap: 38px;
+    padding-top: 68px;
+    padding-bottom: 72px;
+  }
+
+  .site-shell:not(.success-page) .how-section .steps-grid {
+    grid-template-columns: 1fr;
+    width: min(420px, 100%);
+  }
+
+  .site-shell:not(.success-page) .how-section .step-card {
+    min-height: 150px;
+  }
+
+  .site-shell:not(.success-page) .how-section .featured-step {
+    transform: none;
+  }
+}
