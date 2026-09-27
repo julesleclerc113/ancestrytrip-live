@@ -1456,7 +1456,7 @@
 
 .site-shell.success-page .research-map-route {
   position: absolute;
-  inset: 130px 5% 125px;
+  inset: 130px 5% 245px;
   pointer-events: none;
 }
 
@@ -1563,10 +1563,11 @@
 
 .site-shell.success-page .research-map-legend {
   position: absolute;
+  left: 28px;
   right: 28px;
-  bottom: 26px;
+  bottom: 24px;
   z-index: 4;
-  width: min(470px, calc(100% - 56px));
+  width: calc(100% - 56px);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -1602,7 +1603,7 @@
   box-shadow: 0 10px 24px rgba(11,29,50,.11);
 }
 
-.site-shell.success-page .research-map-legend a > span {
+.site-shell.success-page .research-map-legend button > span {
   color: var(--at-gold);
   font-size: .7rem;
   font-weight: 800;
@@ -1720,7 +1721,7 @@
   }
 
   .site-shell.success-page .research-map-route {
-    inset: 230px 4% 245px;
+    inset: 230px 4% 275px;
   }
 
   .site-shell.success-page .research-map-legend {
@@ -1737,14 +1738,14 @@
   }
 
   .site-shell.success-page .research-map-route {
-    inset: 220px 8% 320px;
+    inset: 220px 8% 350px;
   }
 
   .site-shell.success-page .research-map-legend {
     grid-template-columns: 1fr;
   }
 
-  .site-shell.success-page .research-map-legend a:nth-child(n+5) {
+  .site-shell.success-page .research-map-legend button:nth-child(n+5) {
     display: none;
   }
 
