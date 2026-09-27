@@ -1391,92 +1391,142 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
 }
 
 async function geocodeReportPlace(place: ReportPlace) {
-  const query = [place.name, place.location, "France"]
-    .filter(Boolean)
-    .join(", ");
+  const location = place.location?.trim() || "";
+  const name = place.name?.trim() || "";
 
-  if (!query) return null;
+  if (!location && !name) return null;
 
-  const url =
-    "https://nominatim.openstreetmap.org/search?" +
-    new URLSearchParams({
-      q: query,
-      format: "jsonv2",
-      limit: "1",
-      countrycodes: "fr",
-    }).toString();
+  const locationParts = location
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "AncestryTrip/1.0 (+https://ancestrytrip.com)",
-        Accept: "application/json",
-      },
-      signal: AbortSignal.timeout(5000),
-    });
+  const postcode =
+    location.match(/\b\d{5}\b/)?.[0] || "";
 
-    if (!response.ok) return null;
+  const locality =
+    [...locationParts]
+      .reverse()
+      .find(
+        (part) =>
+          part &&
+          !/^\d{5}$/.test(part) &&
+          !/^france$/i.test(part),
+      ) || "";
 
-    const results = (await response.json()) as Array<{
-      lat?: string;
-      lon?: string;
-      display_name?: string;
-      address?: {
-        postcode?: string;
-        city?: string;
-        town?: string;
-        village?: string;
-        municipality?: string;
-      };
-    }>;
+  // Try the exact research place first. If a named heritage site is not
+  // indexed, fall back to the concrete address/locality supplied by the
+  // report instead of failing the map completely.
+  const queries = [
+    [name, location, "France"],
+    [location, "France"],
+    [name, locality, postcode, "France"],
+    [name, locality, "France"],
+  ]
+    .map((parts) => parts.filter(Boolean).join(", "))
+    .filter((query, index, all) => query && all.indexOf(query) === index);
 
-    const result = results[0];
+  for (const query of queries) {
+    const url =
+      "https://nominatim.openstreetmap.org/search?" +
+      new URLSearchParams({
+        q: query,
+        format: "jsonv2",
+        addressdetails: "1",
+        limit: "3",
+        countrycodes: "fr",
+      }).toString();
 
-    if (!result?.lat || !result.lon) return null;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
 
-    const latitude = Number(result.lat);
-    const longitude = Number(result.lon);
+      if (!response.ok) continue;
 
-    if (
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude) ||
-      latitude < 41 ||
-      latitude > 52 ||
-      longitude < -6 ||
-      longitude > 10
-    ) {
-      return null;
+      const results = (await response.json()) as Array<{
+        lat?: string;
+        lon?: string;
+        display_name?: string;
+        address?: {
+          postcode?: string;
+          city?: string;
+          town?: string;
+          village?: string;
+          municipality?: string;
+        };
+      }>;
+
+      for (const result of results) {
+        if (!result?.lat || !result.lon) continue;
+
+        const latitude = Number(result.lat);
+        const longitude = Number(result.lon);
+
+        if (
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude) ||
+          latitude < 41 ||
+          latitude > 52 ||
+          longitude < -6 ||
+          longitude > 10
+        ) {
+          continue;
+        }
+
+        const resultText = [
+          result.display_name || "",
+          result.address?.postcode || "",
+          result.address?.city || "",
+          result.address?.town || "",
+          result.address?.village || "",
+          result.address?.municipality || "",
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        const locationTokens = location
+          .toLowerCase()
+          .split(/[^a-z0-9à-ÿ]+/i)
+          .filter(
+            (token) =>
+              token.length >= 4 &&
+              !/^france$/i.test(token) &&
+              !/^saint$/i.test(token),
+          );
+
+        const matchingTokens = locationTokens.filter((token) =>
+          resultText.includes(token),
+        );
+
+        const hasPostcodeMatch =
+          !postcode ||
+          resultText.includes(postcode);
+
+        // A named-place match needs to agree with the supplied location.
+        // An address-only fallback is accepted when its postcode/locality
+        // matches, which is much more reliable than showing a world map.
+        if (
+          !hasPostcodeMatch ||
+          (locationTokens.length > 0 &&
+            matchingTokens.length === 0)
+        ) {
+          continue;
+        }
+
+        return { latitude, longitude };
+      }
+    } catch {
+      // Try the next query. A map is optional; the report must remain usable.
     }
-
-    const locationText = [
-      place.location,
-      result.display_name || "",
-      result.address?.postcode || "",
-      result.address?.city || "",
-      result.address?.town || "",
-      result.address?.village || "",
-      result.address?.municipality || "",
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    const meaningfulLocationToken = place.location
-      .toLowerCase()
-      .split(/[^a-z0-9à-ÿ]+/i)
-      .find((token) => token.length >= 5 && !/^france$/i.test(token));
-
-    if (
-      meaningfulLocationToken &&
-      !locationText.includes(meaningfulLocationToken)
-    ) {
-      return null;
-    }
-
-    return { latitude, longitude };
-  } catch {
-    return null;
   }
+
+  return null;
 }
 
 async function verifyStripeWebhookSignature(
