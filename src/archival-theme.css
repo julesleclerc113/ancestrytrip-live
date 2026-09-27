@@ -1490,12 +1490,11 @@
   place-items: center;
   transform: translate(-50%, -50%);
   border: 2px solid var(--at-cream);
-  border-radius: 50% 50% 50% 0;
+  border-radius: 50%;
   background: var(--at-navy);
   color: var(--at-gold-light);
   box-shadow: 0 10px 24px rgba(11,29,50,.22);
   text-decoration: none;
-  rotate: -45deg;
   animation: ancestry-map-pulse 3.2s ease-in-out infinite;
   transition: transform .25s ease, background .25s ease;
   cursor: pointer;
@@ -1516,7 +1515,6 @@
 }
 
 .site-shell.success-page .research-map-pin > span:first-child {
-  rotate: 45deg;
   font-size: .68rem;
   font-weight: 800;
 }
@@ -1529,7 +1527,7 @@
   padding: 15px 17px;
   display: grid;
   gap: 4px;
-  transform: translate(-50%, 8px) rotate(45deg);
+  transform: translate(-50%, 8px);
   transform-origin: center bottom;
   border: 1px solid rgba(11,29,50,.14);
   border-radius: 14px;
@@ -1583,7 +1581,7 @@
 .site-shell.success-page .research-map-pin.is-active .research-map-tooltip {
   opacity: 1;
   visibility: visible;
-  transform: translate(-50%, 0) rotate(45deg);
+  transform: translate(-50%, 0);
 }
 
 .site-shell.success-page .journey-card {
