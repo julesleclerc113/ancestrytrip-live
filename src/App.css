@@ -2754,3 +2754,84 @@ html {
 .site-shell:not(.success-page) .preview-section .highlight-list p {
   color: #f4f0e7;
 }
+
+
+/* Visual polish for the Choose Your Depth section. */
+.site-shell:not(.success-page) .pricing-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(238,232,220,.9), rgba(238,232,220,.94)),
+    url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=85") center/cover;
+}
+
+.site-shell:not(.success-page) .pricing-heading .kicker {
+  color: #d8b889;
+}
+
+.site-shell:not(.success-page) .pricing-heading h2 {
+  color: #17231d;
+}
+
+.site-shell:not(.success-page) .pricing-heading h2 em {
+  color: #a56845;
+}
+
+.site-shell:not(.success-page) .pricing-grid {
+  align-items: stretch;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card {
+  text-align: center;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card > div {
+  width: 100%;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card p {
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card ul {
+  width: 100%;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card li {
+  margin: 9px 0;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card li::before {
+  content: none;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card .price,
+.site-shell:not(.success-page) .pricing-grid .price-card .price-eyebrow,
+.site-shell:not(.success-page) .pricing-grid .price-card p,
+.site-shell:not(.success-page) .pricing-grid .price-card li {
+  text-align: center;
+}
+
+.site-shell:not(.success-page) .pricing-grid .price-card .price-eyebrow {
+  display: block;
+}
+
+.site-shell:not(.success-page) .pricing-grid .dark-price-card {
+  box-shadow: 0 24px 65px rgba(23,35,29,.18);
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .pricing-section {
+    background:
+      linear-gradient(rgba(238,232,220,.93), rgba(238,232,220,.96)),
+      url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85") center/cover;
+  }
+}
