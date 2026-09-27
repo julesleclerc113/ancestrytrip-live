@@ -715,6 +715,56 @@ function App() {
           </div>
         </section>
 
+        <section className="heritage-visual-band" aria-label="Heritage places and travel">
+          <div className="heritage-visual-copy">
+            <div className="kicker">THE PLACES BEHIND THE STORY</div>
+            <h2>History becomes <em>somewhere you can go.</em></h2>
+            <p>
+              From a village street to an old parish church, the journey connects
+              family clues with the places that still exist today.
+            </p>
+            <div className="visual-route">
+              <span>ORIGIN</span>
+              <i />
+              <span>ARCHIVE</span>
+              <i />
+              <span>JOURNEY</span>
+            </div>
+          </div>
+
+          <div className="heritage-collage">
+            <figure className="collage-main">
+              <img
+                src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=85"
+                alt="Historic European landscape"
+                loading="lazy"
+              />
+              <figcaption>PLACES / MEMORY / ORIGIN</figcaption>
+            </figure>
+            <figure className="collage-small collage-village">
+              <img
+                src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=85"
+                alt="European village landscape"
+                loading="lazy"
+              />
+            </figure>
+            <figure className="collage-small collage-archive">
+              <img
+                src="https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=85"
+                alt="Old handwritten research notes"
+                loading="lazy"
+              />
+            </figure>
+            <div className="collage-map" aria-hidden="true">
+              <span className="map-route-line" />
+              <span className="collage-pin pin-a" />
+              <span className="collage-pin pin-b" />
+              <span className="collage-pin pin-c" />
+              <strong>RESEARCH ROUTE</strong>
+            </div>
+          </div>
+        </section>
+
         <section
           className="section how-section"
           id="how-it-works"
