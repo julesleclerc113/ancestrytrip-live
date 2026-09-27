@@ -99,9 +99,6 @@ function ReportExperience({
   const images = report.images || [];
   const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
   const selectedPlace = places[selectedPlaceIndex] || places[0];
-  const selectedPlaceQuery = selectedPlace
-    ? [selectedPlace.name, selectedPlace.location].filter(Boolean).join(", ")
-    : "";
   const selectedPlaceLocality = selectedPlace?.location
     ? selectedPlace.location.split(",").at(-1)?.trim() || ""
     : "";
