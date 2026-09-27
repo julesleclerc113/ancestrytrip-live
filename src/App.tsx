@@ -250,7 +250,7 @@ function ReportExperience({
             </svg>
           </div>
           <div className="research-map-caption">
-            <span>FIELD RESEARCH</span>
+            <span style={{ color: "var(--at-gold)" }}>FIELD RESEARCH</span>
             <p>Choose a location below to move the live street map above to that place. The route itself shows research order, not geographic distance.</p>
           </div>
           <div className="research-map-pins">
