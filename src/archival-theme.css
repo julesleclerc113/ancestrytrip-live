@@ -1478,7 +1478,7 @@
 
 .site-shell.success-page .research-map-pins {
   position: absolute;
-  inset: 0;
+  inset: 130px 5% 110px;
   z-index: 3;
 }
 
@@ -1679,7 +1679,8 @@
     width: calc(100% - 40px);
   }
 
-  .site-shell.success-page .research-map-route {
+  .site-shell.success-page .research-map-route,
+  .site-shell.success-page .research-map-pins {
     inset: 230px 4% 55px;
   }
 
@@ -1693,7 +1694,8 @@
     min-height: 690px;
   }
 
-  .site-shell.success-page .research-map-route {
+  .site-shell.success-page .research-map-route,
+  .site-shell.success-page .research-map-pins {
     inset: 220px 7% 45px;
   }
 
