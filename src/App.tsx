@@ -1053,12 +1053,12 @@ function App() {
 
                 <div className="price-lines">
                   <div>
-                    <strong>EUR 19</strong>
+                    <strong>19 €</strong>
                     <span>Heritage Trip</span>
                   </div>
 
                   <div>
-                    <strong>EUR 49</strong>
+                    <strong>49 €</strong>
                     <span>Deep Heritage Trip</span>
                   </div>
                 </div>
