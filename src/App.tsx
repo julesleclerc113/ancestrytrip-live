@@ -26,7 +26,10 @@ interface ReportPlace {
   location: string;
   why_it_matters: string;
   what_to_see: string;
+  category?: string;
+  research_role?: string;
   image_url?: string;
+  map_url?: string;
 }
 
 interface ReportImage {
@@ -101,6 +104,18 @@ function ReportExperience({
     return "RESEARCH LEAD";
   };
 
+  const placeImage = (place: ReportPlace) => {
+    if (place.image_url) return place.image_url;
+    const target = `${place.name} ${place.location}`.toLowerCase();
+    return images.find((image) => {
+      const text = `${image.title} ${image.source_url}`.toLowerCase();
+      return target
+        .split(/[^a-z0-9à-ÿ]+/i)
+        .filter((word) => word.length > 4)
+        .some((word) => text.includes(word));
+    })?.url;
+  };
+
   return (
     <>
       <div className="report-hero">
@@ -164,6 +179,53 @@ function ReportExperience({
         </section>
       )}
 
+      <section className="report-section report-route-map">
+        <div className="report-section-head">
+          <div>
+            <div className="report-kicker">RESEARCH ROUTE</div>
+            <h2>See how the investigation moves through place.</h2>
+          </div>
+          <span className="report-section-count">Interactive route</span>
+        </div>
+        <div className="research-map">
+          <div className="research-map-grid" aria-hidden="true" />
+          <div className="research-map-route" aria-hidden="true">
+            <svg viewBox="0 0 1000 260" preserveAspectRatio="none">
+              <path d="M60 205 C180 55 285 235 420 105 S650 70 770 175 S890 210 950 55" />
+            </svg>
+          </div>
+          <div className="research-map-caption">
+            <span>FIELD RESEARCH</span>
+            <strong>Origin → evidence → place → next lead</strong>
+            <p>The route follows the order of the investigation. Location links open the researched place in a map service; no unverified coordinates are presented.</p>
+          </div>
+          <div className="research-map-pins">
+            {places.slice(0, 8).map((place, index) => (
+              <a
+                className="research-map-pin"
+                href={place.map_url || "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place.name + ", " + place.location)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ left: (8 + (index / Math.max(1, Math.min(places.length - 1, 7))) * 84) + "%", top: (58 - Math.sin(index * 1.45) * 27) + "%" }}
+                key={"pin-" + place.name + "-" + index}
+                aria-label={"Open " + place.name + " in maps"}
+              >
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </a>
+            ))}
+          </div>
+          <div className="research-map-legend">
+            {places.slice(0, 6).map((place, index) => (
+              <a href={"#place-" + (index + 1)} key={"legend-" + place.name + "-" + index}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{place.name}</strong>
+                <small>{place.category || "Research site"}</small>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="report-section report-journey">
         <div className="report-section-head">
           <div>
@@ -174,13 +236,14 @@ function ReportExperience({
         </div>
         <div className="journey-strip">
           {places.map((place, index) => (
-            <article className="journey-card" key={place.name + place.location}>
+            <article className="journey-card" id={"place-" + (index + 1)} key={place.name + place.location}>
               <div className="journey-card-top">
                 <span className="journey-index">{String(index + 1).padStart(2, "0")}</span>
                 <span className="journey-location">{place.location}</span>
+                {place.category && <span className="journey-category">{place.category}</span>}
               </div>
-              {place.image_url ? (
-                <img src={place.image_url} alt="" loading="lazy" />
+              {placeImage(place) ? (
+                <img src={placeImage(place)} alt={place.name} loading="lazy" />
               ) : (
                 <div className="journey-image-placeholder" aria-hidden="true">
                   <span>{place.name}</span>
@@ -188,8 +251,14 @@ function ReportExperience({
               )}
               <div className="journey-card-body">
                 <h3>{place.name}</h3>
+                <p className="journey-role">{place.research_role || "Research location"}</p>
                 <p className="journey-matters">{place.why_it_matters}</p>
                 <p>{place.what_to_see}</p>
+                {place.map_url && (
+                  <a className="journey-map-link" href={place.map_url} target="_blank" rel="noreferrer">
+                    Open location in maps →
+                  </a>
+                )}
               </div>
             </article>
           ))}
