@@ -1263,7 +1263,8 @@ Do not use markdown fences.
     validSources.values(),
   );
 
-  return await hydrateReportImages(report);
+  const reportWithImages = await hydrateReportImages(report);
+  return await hydrateReportMapCoordinates(env, reportWithImages);
 }
 
 
@@ -1390,58 +1391,36 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
   };
 }
 
-async function geocodeReportPlace(place: ReportPlace) {
-  const location = place.location?.trim() || "";
+async function geocodeReportPlace(
+  apiKey: string,
+  place: ReportPlace,
+) {
   const name = place.name?.trim() || "";
+  const location = place.location?.trim() || "";
 
-  if (!location && !name) return null;
+  if (!apiKey || (!name && !location)) return null;
 
-  const locationParts = location
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const postcode =
-    location.match(/\b\d{5}\b/)?.[0] || "";
-
-  const locality =
-    [...locationParts]
-      .reverse()
-      .find(
-        (part) =>
-          part &&
-          !/^\d{5}$/.test(part) &&
-          !/^france$/i.test(part),
-      ) || "";
-
-  // Try the exact research place first. If a named heritage site is not
-  // indexed, fall back to the concrete address/locality supplied by the
-  // report instead of failing the map completely.
   const queries = [
-    [name, location, "France"],
-    [location, "France"],
-    [name, locality, postcode, "France"],
-    [name, locality, "France"],
-  ]
-    .map((parts) => parts.filter(Boolean).join(", "))
-    .filter((query, index, all) => query && all.indexOf(query) === index);
+    [name, location, "France"].filter(Boolean).join(", "),
+    [location, "France"].filter(Boolean).join(", "),
+  ].filter((query, index, all) => query && all.indexOf(query) === index);
 
   for (const query of queries) {
-    const url =
-      "https://nominatim.openstreetmap.org/search?" +
-      new URLSearchParams({
-        q: query,
-        format: "jsonv2",
-        addressdetails: "1",
-        limit: "3",
-        countrycodes: "fr",
-      }).toString();
-
     try {
+      const url =
+        "https://api.geoapify.com/v1/geocode/search?" +
+        new URLSearchParams({
+          text: query,
+          filter: "countrycode:fr",
+          limit: "1",
+          format: "json",
+          lang: "fr",
+          apiKey,
+        }).toString();
+
       const response = await fetch(url, {
         headers: {
-          "User-Agent":
-            "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+          "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
           Accept: "application/json",
         },
         signal: AbortSignal.timeout(5000),
@@ -1449,84 +1428,65 @@ async function geocodeReportPlace(place: ReportPlace) {
 
       if (!response.ok) continue;
 
-      const results = (await response.json()) as Array<{
-        lat?: string;
-        lon?: string;
-        display_name?: string;
-        address?: {
-          postcode?: string;
-          city?: string;
-          town?: string;
-          village?: string;
-          municipality?: string;
-        };
-      }>;
+      const data = (await response.json()) as {
+        results?: Array<{
+          lat?: number;
+          lon?: number;
+        }>;
+      };
 
-      for (const result of results) {
-        if (!result?.lat || !result.lon) continue;
+      const result = data.results?.[0];
+      const latitude = Number(result?.lat);
+      const longitude = Number(result?.lon);
 
-        const latitude = Number(result.lat);
-        const longitude = Number(result.lon);
-
-        if (
-          !Number.isFinite(latitude) ||
-          !Number.isFinite(longitude) ||
-          latitude < 41 ||
-          latitude > 52 ||
-          longitude < -6 ||
-          longitude > 10
-        ) {
-          continue;
-        }
-
-        const resultText = [
-          result.display_name || "",
-          result.address?.postcode || "",
-          result.address?.city || "",
-          result.address?.town || "",
-          result.address?.village || "",
-          result.address?.municipality || "",
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        const locationTokens = location
-          .toLowerCase()
-          .split(/[^a-z0-9à-ÿ]+/i)
-          .filter(
-            (token) =>
-              token.length >= 4 &&
-              !/^france$/i.test(token) &&
-              !/^saint$/i.test(token),
-          );
-
-        const matchingTokens = locationTokens.filter((token) =>
-          resultText.includes(token),
-        );
-
-        const hasPostcodeMatch =
-          !postcode ||
-          resultText.includes(postcode);
-
-        // A named-place match needs to agree with the supplied location.
-        // An address-only fallback is accepted when its postcode/locality
-        // matches, which is much more reliable than showing a world map.
-        if (
-          !hasPostcodeMatch ||
-          (locationTokens.length > 0 &&
-            matchingTokens.length === 0)
-        ) {
-          continue;
-        }
-
+      if (
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude) &&
+        latitude >= 41 &&
+        latitude <= 52 &&
+        longitude >= -6 &&
+        longitude <= 10
+      ) {
         return { latitude, longitude };
       }
     } catch {
-      // Try the next query. A map is optional; the report must remain usable.
+      // Try the simpler location query. Map enrichment is optional.
     }
   }
 
   return null;
+}
+
+async function hydrateReportMapCoordinates(
+  env: Env,
+  report: HeritageReport,
+): Promise<HeritageReport> {
+  const apiKey = env.GEOAPIFY_API_KEY?.trim();
+
+  if (!apiKey || !Array.isArray(report.places) || report.places.length === 0) {
+    return report;
+  }
+
+  const places = await Promise.all(
+    report.places.map(async (place) => {
+      if (
+        typeof place.latitude === "number" &&
+        Number.isFinite(place.latitude) &&
+        typeof place.longitude === "number" &&
+        Number.isFinite(place.longitude)
+      ) {
+        return place;
+      }
+
+      const coordinates = await geocodeReportPlace(apiKey, place);
+
+      return coordinates
+        ? { ...place, ...coordinates }
+        : place;
+    }),
+  );
+
+  return { ...report, places };
 }
 
 async function verifyStripeWebhookSignature(
@@ -2547,6 +2507,26 @@ export default {
         reportContent = JSON.parse(report.content_json) as HeritageReport;
       } catch {
         return json({ error: "Stored report is invalid." }, 500);
+      }
+
+      // Older reports may have been generated before map coordinates were stored.
+      // Enrich them once on first view; later marker clicks use the stored coordinates.
+      try {
+        const enrichedReport = await hydrateReportMapCoordinates(env, reportContent);
+
+        if (JSON.stringify(enrichedReport.places) !== JSON.stringify(reportContent.places)) {
+          reportContent = enrichedReport;
+
+          await env.DB.prepare(`
+            UPDATE ancestry_reports
+            SET content_json = ?
+            WHERE id = ?
+          `)
+            .bind(JSON.stringify(reportContent), reportId)
+            .run();
+        }
+      } catch {
+        // The report remains usable if map enrichment is temporarily unavailable.
       }
 
       // Older reports may have been generated before image hydration existed.
