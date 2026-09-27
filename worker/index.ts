@@ -2309,9 +2309,27 @@ export default {
         return json({ error: "Report not found." }, 404);
       }
 
+      let reportContent: HeritageReport;
+
+      try {
+        reportContent = JSON.parse(report.content_json) as HeritageReport;
+      } catch {
+        return json({ error: "Stored report is invalid." }, 500);
+      }
+
+      // Older reports may have been generated before image hydration existed.
+      // Refresh their imagery on first view so existing paid reports benefit too.
+      if (!Array.isArray(reportContent.images) || reportContent.images.length === 0) {
+        try {
+          reportContent = await hydrateReportImages(reportContent);
+        } catch {
+          // The report itself remains available even if image enrichment fails.
+        }
+      }
+
       return json({
         reportId: report.id,
-        report: JSON.parse(report.content_json),
+        report: reportContent,
         product: report.product,
         amountCents: report.amount_cents,
       });
