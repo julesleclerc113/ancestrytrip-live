@@ -710,3 +710,21 @@
     background-position: center center;
   }
 }
+
+
+/* Final How It Works image: Portofino harbour in clear daylight. */
+.site-shell:not(.success-page) .how-section {
+  background-image:
+    url("https://images.unsplash.com/photo-1590141302903-3f6f3631b53f?auto=format&fit=crop&w=2200&q=90");
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .how-section {
+    background-image:
+      url("https://images.unsplash.com/photo-1590141302903-3f6f3631b53f?auto=format&fit=crop&w=1600&q=90");
+    background-position: center center;
+  }
+}
