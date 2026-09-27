@@ -1529,22 +1529,11 @@
   text-align: center;
 }
 
-/* Keep the first research card fully inside the map by opening it below and to the right. */
-.site-shell.success-page .research-map-pin:first-child .research-map-tooltip {
-  top: calc(100% + 16px);
-  bottom: auto;
-  left: calc(50% + 46px);
-  transform: translate(-50%, -8px) rotate(45deg);
-}
-
-.site-shell.success-page .research-map-pin:first-child:hover .research-map-tooltip,
-.site-shell.success-page .research-map-pin:first-child:focus-visible .research-map-tooltip {
-  transform: translate(-50%, 0) rotate(45deg);
-}
-
+/* The pin is rotated to create the map-pin silhouette. Offset the card in the
+   pin's local coordinate system so its visual arrow stays anchored to the marker. */
 .site-shell.success-page .research-map-tooltip {
   position: absolute;
-  left: 50%;
+  left: calc(50% + 46px);
   bottom: calc(100% + 16px);
   width: min(260px, 42vw);
   padding: 15px 17px;
@@ -1562,6 +1551,33 @@
   pointer-events: none;
   transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
   text-align: left;
+}
+
+
+/* Marker 1 sits close to the left edge: place its card to the right/below and
+   put the connector on the card's left edge so it points back toward the marker. */
+.site-shell.success-page .research-map-pin:first-child .research-map-tooltip {
+  top: calc(100% + 28px);
+  bottom: auto;
+  left: calc(50% + 92px);
+  transform: translate(-50%, -8px) rotate(45deg);
+}
+
+.site-shell.success-page .research-map-pin:first-child .research-map-tooltip::after {
+  left: -7px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  border: 0;
+  width: 14px;
+  height: 14px;
+  background: #fffaf1;
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+
+.site-shell.success-page .research-map-pin:first-child:hover .research-map-tooltip,
+.site-shell.success-page .research-map-pin:first-child:focus-visible .research-map-tooltip {
+  transform: translate(-50%, 0) rotate(45deg);
 }
 
 .site-shell.success-page .research-map-tooltip::after {
