@@ -117,9 +117,9 @@ function ReportExperience({
     : "";
 
   const mapEmbedUrl = selectedPlaceMapQuery
-    ? "https://www.google.com/maps?q=" +
+    ? "https://maps.google.com/maps?q=" +
       encodeURIComponent(selectedPlaceMapQuery) +
-      "&output=embed"
+      "&hl=en&z=15&output=embed"
     : "";
 
   function selectMapPlace(index: number) {
