@@ -255,32 +255,36 @@ function ReportExperience({
             <p>Choose a location below to move the live street map above to that place. The route itself shows research order, not geographic distance.</p>
           </div>
           <div className="research-map-pins">
-            {places.slice(0, 8).map((place, index) => (
-              <button
-                type="button"
-                className={"research-map-pin" + (selectedPlaceIndex === index ? " is-active" : "")}
-                onClick={() => selectMapPlace(index)}
-                aria-label={"Show " + place.name + " in the map"}
-                style={{ left: [7, 20, 35, 49, 64, 78, 88, 94][index] + "%", top: [77, 28, 67, 22, 25, 62, 73, 19][index] + "%" }}
-                key={"pin-" + place.name + "-" + index}
-              >
-                <span>{String(index + 1).padStart(2, "0")}</span>
-              </button>
-            ))}
-          </div>
-          <div className="research-map-legend">
-            {places.slice(0, 6).map((place, index) => (
-              <button
-                type="button"
-                className={"research-map-location" + (selectedPlaceIndex === index ? " is-active" : "")}
-                onClick={() => selectMapPlace(index)}
-                key={"legend-" + place.name + "-" + index}
-              >
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{place.name}</strong>
-                <small>{place.category || "Research site"}</small>
-              </button>
-            ))}
+            {places.slice(0, 8).map((place, index) => {
+              const pinPositions = [
+                [60, 205],
+                [145, 155],
+                [240, 143],
+                [335, 137],
+                [500, 70],
+                [650, 100],
+                [790, 190],
+                [950, 55],
+              ];
+              const [x, y] = pinPositions[index] || pinPositions[pinPositions.length - 1];
+              return (
+                <button
+                  type="button"
+                  className={"research-map-pin" + (selectedPlaceIndex === index ? " is-active" : "")}
+                  onClick={() => selectMapPlace(index)}
+                  aria-label={"Show " + place.name + " in the map"}
+                  style={{ left: (x / 10) + "%", top: (y / 2.6) + "%" }}
+                  key={"pin-" + place.name + "-" + index}
+                >
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span className="research-map-tooltip" role="tooltip">
+                    <strong>{place.name}</strong>
+                    <small>{place.location}</small>
+                    <em>{place.category || "Research site"}</em>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
