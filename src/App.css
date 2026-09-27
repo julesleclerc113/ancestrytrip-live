@@ -2835,3 +2835,30 @@ html {
       url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85") center/cover;
   }
 }
+
+
+/* Improve How It Works readability over the coastal sunset image without adding an overlay. */
+.site-shell:not(.success-page) .how-section .section-intro h2 {
+  color: #0b1d32;
+  text-shadow: 0 2px 14px rgba(255,255,255,.42);
+}
+
+.site-shell:not(.success-page) .how-section .section-intro p {
+  color: #10231b;
+  font-weight: 600;
+  text-shadow: 0 2px 12px rgba(255,255,255,.48);
+}
+
+.site-shell:not(.success-page) .how-section .section-intro .kicker {
+  color: #8b642e;
+  text-shadow: 0 1px 8px rgba(255,255,255,.5);
+}
+
+.site-shell:not(.success-page) .how-section .step-card h3 {
+  color: #17231d;
+}
+
+.site-shell:not(.success-page) .how-section .step-card p {
+  color: #26382d;
+  font-weight: 500;
+}
