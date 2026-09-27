@@ -2689,3 +2689,12 @@ html {
 .site-shell:not(.success-page) .preview-section .highlight-list p {
   color: #26382d;
 }
+
+
+.site-shell:not(.success-page) .how-section .section-intro h2 {
+  color: #17231d;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro p {
+  color: #425048;
+}
