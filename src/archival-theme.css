@@ -614,3 +614,38 @@
       url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=90");
   }
 }
+
+
+/* Final How It Works image and vertical alignment. */
+.site-shell:not(.success-page) .how-section {
+  min-height: 680px;
+  padding-top: clamp(64px, 7vw, 90px);
+  padding-bottom: clamp(64px, 7vw, 90px);
+  align-items: center;
+  background-image:
+    url("https://images.unsplash.com/photo-1617102931606-b243b71228c8?auto=format&fit=crop&w=2200&q=90");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro {
+  position: relative;
+  top: auto;
+  align-self: center;
+}
+
+.site-shell:not(.success-page) .how-section .steps-grid {
+  align-self: center;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .how-section {
+    min-height: auto;
+    padding-top: 64px;
+    padding-bottom: 72px;
+    background-image:
+      url("https://images.unsplash.com/photo-1617102931606-b243b71228c8?auto=format&fit=crop&w=1600&q=90");
+    background-position: center;
+  }
+}
