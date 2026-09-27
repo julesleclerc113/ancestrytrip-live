@@ -30,6 +30,9 @@ interface ReportPlace {
   research_role?: string;
   image_url?: string;
   map_url?: string;
+  latitude?: number;
+  longitude?: number;
+  google_place_id?: string;
 }
 
 interface ReportImage {
@@ -103,9 +106,16 @@ function ReportExperience({
     ? selectedPlace.location.split(",").at(-1)?.trim() || ""
     : "";
   const selectedPlaceMapQuery = selectedPlace
-    ? [selectedPlace.name, selectedPlaceLocality, "France"]
-        .filter(Boolean)
-        .join(", ")
+    ? selectedPlace.google_place_id
+      ? selectedPlace.name
+      : typeof selectedPlace.latitude === "number" &&
+          typeof selectedPlace.longitude === "number"
+        ? selectedPlace.latitude + "," + selectedPlace.longitude
+        : selectedPlace.map_url
+          ? selectedPlace.map_url
+          : [selectedPlace.name, selectedPlaceLocality, "France"]
+              .filter(Boolean)
+              .join(", ")
     : "";
 
   const mapEmbedUrl = selectedPlaceMapQuery
@@ -221,11 +231,7 @@ function ReportExperience({
                 href={
                   selectedPlace?.map_url ||
                   "https://www.google.com/maps/search/?api=1&query=" +
-                    encodeURIComponent(
-                      [selectedPlace?.name, selectedPlace?.location]
-                        .filter(Boolean)
-                        .join(", "),
-                    )
+                    encodeURIComponent(selectedPlaceMapQuery)
                 }
                 target="_blank"
                 rel="noreferrer"
