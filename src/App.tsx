@@ -103,24 +103,34 @@ function ReportExperience({
   const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
   const selectedPlace = places[selectedPlaceIndex] || places[0];
 
-  // Keep map selection instant and deterministic. Google Maps can resolve
-  // a place name together with its concrete locality without a geocoding
-  // request, API key, or extra network round-trip.
-  const selectedPlaceLocality = selectedPlace?.location
-    ? selectedPlace.location.split(",").at(-1)?.trim() || ""
-    : "";
+  // Coordinates are geocoded once on the server and stored in the report.
+  // Marker clicks therefore never trigger a geocoding request.
+  const selectedLatitude = selectedPlace?.latitude;
+  const selectedLongitude = selectedPlace?.longitude;
 
-  const selectedPlaceMapQuery = selectedPlace
-    ? [selectedPlace.name, selectedPlaceLocality, "France"]
-        .filter(Boolean)
-        .join(", ")
-    : "";
+  const mapEmbedUrl =
+    typeof selectedLatitude === "number" &&
+    Number.isFinite(selectedLatitude) &&
+    typeof selectedLongitude === "number" &&
+    Number.isFinite(selectedLongitude)
+      ? (() => {
+          const latSpan = 0.012;
+          const lonSpan = 0.018;
+          const south = selectedLatitude - latSpan;
+          const north = selectedLatitude + latSpan;
+          const west = selectedLongitude - lonSpan;
+          const east = selectedLongitude + lonSpan;
 
-  const mapEmbedUrl = selectedPlaceMapQuery
-    ? "https://maps.google.com/maps?hl=en&q=" +
-      encodeURIComponent(selectedPlaceMapQuery) +
-      "&t=&z=15&iwloc=B&output=embed"
-    : "";
+          return (
+            "https://www.openstreetmap.org/export/embed.html?" +
+            new URLSearchParams({
+              bbox: [west, south, east, north].join(","),
+              layer: "mapnik",
+              marker: [selectedLatitude, selectedLongitude].join(","),
+            }).toString()
+          );
+        })()
+      : "";
 
   function selectMapPlace(index: number) {
     if (index >= 0 && index < places.length) {
@@ -248,7 +258,7 @@ function ReportExperience({
             </div>
           )}
           <div className="real-research-map-credit">
-            Interactive map via Google Maps
+            Map data © OpenStreetMap contributors · Geocoding by Geoapify
           </div>
         </div>
 
