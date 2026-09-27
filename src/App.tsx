@@ -102,10 +102,18 @@ function ReportExperience({
   const selectedPlaceQuery = selectedPlace
     ? [selectedPlace.name, selectedPlace.location].filter(Boolean).join(", ")
     : "";
+  const selectedPlaceLocality = selectedPlace?.location
+    ? selectedPlace.location.split(",").at(-1)?.trim() || ""
+    : "";
+  const selectedPlaceMapQuery = selectedPlace
+    ? [selectedPlace.name, selectedPlaceLocality, "France"]
+        .filter(Boolean)
+        .join(", ")
+    : "";
 
-  const mapEmbedUrl = selectedPlaceQuery
+  const mapEmbedUrl = selectedPlaceMapQuery
     ? "https://www.google.com/maps?q=" +
-      encodeURIComponent(selectedPlaceQuery) +
+      encodeURIComponent(selectedPlaceMapQuery) +
       "&output=embed"
     : "";
 
