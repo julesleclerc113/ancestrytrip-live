@@ -252,7 +252,7 @@ function ReportExperience({
           <div className="research-map-caption">
             <span>FIELD RESEARCH</span>
             <strong>Origin → evidence → place → next lead</strong>
-            <p>The map above shows the primary researched place with real streets. The route below keeps the investigation order visible without pretending that research sequence is geographic distance.</p>
+            <p>Choose a location below to move the live street map above to that place. The route itself shows research order, not geographic distance.</p>
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => (
@@ -263,7 +263,6 @@ function ReportExperience({
                 aria-label={"Show " + place.name + " in the map"}
                 style={{ left: (8 + (index / Math.max(1, Math.min(places.length - 1, 7))) * 84) + "%", top: (58 - Math.sin(index * 1.45) * 27) + "%" }}
                 key={"pin-" + place.name + "-" + index}
-                aria-label={"Open " + place.name + " in maps"}
               >
                 <span>{String(index + 1).padStart(2, "0")}</span>
               </button>
