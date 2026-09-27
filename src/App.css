@@ -2761,7 +2761,7 @@ html {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(rgba(238,232,220,.68), rgba(238,232,220,.78)),
+    linear-gradient(rgba(238,232,220,.32), rgba(238,232,220,.46)),
     url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=85") center/cover;
 }
 
@@ -2831,7 +2831,7 @@ html {
 @media (max-width: 800px) {
   .site-shell:not(.success-page) .pricing-section {
     background:
-      linear-gradient(rgba(238,232,220,.72), rgba(238,232,220,.82)),
+      linear-gradient(rgba(238,232,220,.42), rgba(238,232,220,.56)),
       url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85") center/cover;
   }
 }
