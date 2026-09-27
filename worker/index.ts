@@ -1353,19 +1353,20 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     });
   }
 
-  const imageBySource = new Map(
-    images.map((image) => [image.source_url, image.url]),
-  );
+  const places = await Promise.all(
+    (report.places || []).map(async (place) => {
+      if (
+        !place.image_url ||
+        !/^https?:\/\//i.test(place.image_url) ||
+        !(await isUsableImageUrl(place.image_url))
+      ) {
+        const { image_url: _discarded, ...withoutImage } = place;
+        return withoutImage;
+      }
 
-  const places = (report.places || []).map((place) => {
-    if (!place.image_url || !/^https?:\/\//i.test(place.image_url)) {
       return place;
-    }
-
-    return imageBySource.has(place.image_url)
-      ? place
-      : place;
-  });
+    }),
+  );
 
   return {
     ...report,
