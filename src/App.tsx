@@ -105,7 +105,7 @@ function ReportExperience({
 
   const mapEmbedUrl = selectedPlace
     ? selectedPlace.map_url &&
-      /google\\.[^/]+\\/maps/i.test(selectedPlace.map_url)
+      /google\.[^/]+\/maps/i.test(selectedPlace.map_url)
       ? selectedPlace.map_url +
         (selectedPlace.map_url.includes("?") ? "&" : "?") +
         "output=embed"
