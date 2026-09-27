@@ -101,24 +101,96 @@ function ReportExperience({
   const leads = report.research_leads || [];
   const images = report.images || [];
   const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
+  const [mapCoordinates, setMapCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
   const selectedPlace = places[selectedPlaceIndex] || places[0];
-  const selectedPlaceLocality = selectedPlace?.location
-    ? selectedPlace.location.split(",").at(-1)?.trim() || ""
-    : "";
-  const selectedPlaceMapQuery = selectedPlace
-    ? selectedPlace.google_place_id
-      ? selectedPlace.name
-      : typeof selectedPlace.latitude === "number" &&
-          typeof selectedPlace.longitude === "number"
-        ? selectedPlace.latitude + "," + selectedPlace.longitude
-        : selectedPlace.map_url
-          ? selectedPlace.map_url
-          : [selectedPlace.name, selectedPlaceLocality, "France"]
-              .filter(Boolean)
-              .join(", ")
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveMap() {
+      setMapError(false);
+
+      if (!selectedPlace) {
+        setMapCoordinates(null);
+        return;
+      }
+
+      if (
+        typeof selectedPlace.latitude === "number" &&
+        typeof selectedPlace.longitude === "number"
+      ) {
+        setMapCoordinates({
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
+        });
+        return;
+      }
+
+      setMapCoordinates(null);
+      setMapLoading(true);
+
+      try {
+        const reportId = window.location.pathname.startsWith("/report/")
+          ? window.location.pathname.slice("/report/".length)
+          : "";
+
+        if (!reportId) {
+          throw new Error("No report ID.");
+        }
+
+        const response = await fetch(
+          `/api/reports/${encodeURIComponent(reportId)}/map?place=${selectedPlaceIndex}`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Map location could not be resolved.");
+        }
+
+        const data = (await response.json()) as {
+          latitude?: number;
+          longitude?: number;
+        };
+
+        if (
+          !cancelled &&
+          typeof data.latitude === "number" &&
+          typeof data.longitude === "number"
+        ) {
+          setMapCoordinates({
+            latitude: data.latitude,
+            longitude: data.longitude,
+          });
+        } else if (!cancelled) {
+          setMapError(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setMapError(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setMapLoading(false);
+        }
+      }
+    }
+
+    void resolveMap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlaceIndex, selectedPlace]);
+
+  const selectedPlaceMapQuery = mapCoordinates
+    ? mapCoordinates.latitude + "," + mapCoordinates.longitude
     : "";
 
-  const mapEmbedUrl = selectedPlaceMapQuery
+  const mapEmbedUrl = mapCoordinates
     ? "https://www.google.com/maps?q=" +
       encodeURIComponent(selectedPlaceMapQuery) +
       "&output=embed"
@@ -219,26 +291,30 @@ function ReportExperience({
           </div>
           <span className="report-section-count">Interactive route</span>
         </div>
-        {mapEmbedUrl && (
-          <div className="real-research-map">
-            <div className="real-research-map-head">
-              <div>
-                <div className="report-kicker">THE PLACE ON THE MAP</div>
-                <h3>{selectedPlace?.name}</h3>
-                <p>Street-level map view centred on the selected research location.</p>
-              </div>
+        <div className="real-research-map">
+          <div className="real-research-map-head">
+            <div>
+              <div className="report-kicker">THE PLACE ON THE MAP</div>
+              <h3>{selectedPlace?.name}</h3>
+              <p>
+                {mapLoading
+                  ? "Resolving the selected research location..."
+                  : mapCoordinates
+                    ? "Street-level map view centred on the selected research location."
+                    : "This location could not be resolved precisely enough for an embedded map."}
+              </p>
+            </div>
+            {selectedPlace?.map_url && (
               <a
-                href={
-                  selectedPlace?.map_url ||
-                  "https://www.google.com/maps/search/?api=1&query=" +
-                    encodeURIComponent(selectedPlaceMapQuery)
-                }
+                href={selectedPlace.map_url}
                 target="_blank"
                 rel="noreferrer"
               >
                 Open in Google Maps →
               </a>
-            </div>
+            )}
+          </div>
+          {mapEmbedUrl ? (
             <div className="real-research-map-frame">
               <iframe
                 src={mapEmbedUrl}
@@ -247,11 +323,19 @@ function ReportExperience({
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
-            <div className="real-research-map-credit">
-              Interactive map via Google Maps
+          ) : (
+            <div className="real-research-map-unavailable" role="status">
+              {mapLoading
+                ? "Finding the exact map location..."
+                : mapError
+                  ? "No precise map location was found. The report will not show a misleading world map."
+                  : "No precise map location is available."}
             </div>
+          )}
+          <div className="real-research-map-credit">
+            Interactive map via Google Maps
           </div>
-        )}
+        </div>
 
         <div className="research-map">
           <div className="research-map-grid" aria-hidden="true" />
