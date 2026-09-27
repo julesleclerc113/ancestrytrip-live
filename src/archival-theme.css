@@ -649,3 +649,21 @@
     background-position: center;
   }
 }
+
+
+/* Final How It Works image: heritage coast at sundown, with a lighter sky for the existing dark typography. */
+.site-shell:not(.success-page) .how-section {
+  background-image:
+    url("https://images.unsplash.com/photo-1762947240409-044b75367e55?auto=format&fit=crop&w=2200&q=90");
+  background-position: center 18%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .how-section {
+    background-image:
+      url("https://images.unsplash.com/photo-1762947240409-044b75367e55?auto=format&fit=crop&w=1600&q=90");
+    background-position: center 12%;
+  }
+}
