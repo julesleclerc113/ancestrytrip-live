@@ -503,3 +503,11 @@
     animation: none;
   }
 }
+
+
+/* The homepage should use the entire browser canvas, not the starter-app root width. */
+#root:has(.site-shell:not(.success-page)) {
+  width: 100%;
+  max-width: none;
+  border-inline: 0;
+}
