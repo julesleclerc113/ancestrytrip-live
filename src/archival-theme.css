@@ -1543,11 +1543,16 @@
 .site-shell.success-page .research-map-pin:nth-child(4) { animation-delay: -1.5s; }
 .site-shell.success-page .research-map-pin:nth-child(5) { animation-delay: -2s; }
 
-.site-shell.success-page .research-map-pin:hover {
+.site-shell.success-page .research-map-pin:hover,
+.site-shell.success-page .research-map-pin.is-active {
   z-index: 5;
   background: var(--at-gold);
   color: var(--at-navy);
   transform: translate(-50%, -50%) scale(1.13);
+}
+
+.site-shell.success-page .research-map-pin.is-active {
+  box-shadow: 0 0 0 6px rgba(210,180,111,.22), 0 12px 28px rgba(11,29,50,.25);
 }
 
 .site-shell.success-page .research-map-pin span {
@@ -1567,7 +1572,7 @@
   gap: 8px;
 }
 
-.site-shell.success-page .research-map-legend a {
+.site-shell.success-page .research-map-legend button {
   min-width: 0;
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
@@ -1579,13 +1584,22 @@
   background: rgba(255,250,241,.9);
   color: var(--at-navy);
   text-decoration: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   box-shadow: 0 8px 20px rgba(11,29,50,.06);
-  transition: transform .2s ease, border-color .2s ease;
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
 }
 
-.site-shell.success-page .research-map-legend a:hover {
+.site-shell.success-page .research-map-legend button:hover,
+.site-shell.success-page .research-map-legend button.is-active {
   transform: translateY(-2px);
   border-color: rgba(177,138,67,.5);
+  background: rgba(255,250,241,1);
+}
+
+.site-shell.success-page .research-map-legend button.is-active {
+  box-shadow: 0 10px 24px rgba(11,29,50,.11);
 }
 
 .site-shell.success-page .research-map-legend a > span {
