@@ -261,7 +261,7 @@ function ReportExperience({
                 className={"research-map-pin" + (selectedPlaceIndex === index ? " is-active" : "")}
                 onClick={() => selectMapPlace(index)}
                 aria-label={"Show " + place.name + " in the map"}
-                style={{ left: (8 + (index / Math.max(1, Math.min(places.length - 1, 7))) * 84) + "%", top: (58 - Math.sin(index * 1.45) * 27) + "%" }}
+                style={{ left: [7, 20, 35, 49, 64, 78, 88, 94][index] + "%", top: [77, 28, 67, 22, 25, 62, 73, 19][index] + "%" }}
                 key={"pin-" + place.name + "-" + index}
               >
                 <span>{String(index + 1).padStart(2, "0")}</span>
