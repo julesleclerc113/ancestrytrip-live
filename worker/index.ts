@@ -991,10 +991,12 @@ FIELD RULES
 
 - Use exactly these top-level field names.
 - "sources" must be an array of the most important sources actually consulted during the research.
-- "images" must be an array. It is optional research metadata used to enrich the visual report; if you cannot identify a real image URL from a consulted webpage, return an empty array.
-- Never invent an image URL. Only use image URLs actually present on a consulted webpage, and pair each image with the webpage URL in "source_url".
+- "images" must be an array containing 2-4 representative images whenever the research pages expose usable images; do not leave it empty merely because the page is not itself an image file.
+- Actively look for visual material while researching: official archive photographs, museum collections, heritage pages, municipal history pages, historic maps, churches, cemeteries, streets, ports, stations and landscapes that are directly relevant to the report.
+- Never invent an image URL. Only use a direct image URL actually present on a consulted webpage, such as an og:image, twitter:image, gallery image or image asset linked from that page, and pair it with the exact webpage URL in "source_url".
 - Prefer 2-4 representative place images from official archive, museum, heritage, municipal, library or established institutional pages.
-- If you identify a real image URL that clearly depicts a specific place in the "places" list, you may include it as "image_url" on that place; otherwise omit it. Never guess an image URL.
+- If a real image clearly depicts a specific place in the "places" list, include the direct image URL as "image_url" on that place as well as including the webpage in "source_url". Never guess an image URL.
+- Do not substitute generic stock photography when a research-specific image is unavailable.
 - Keep image URLs separate from "sources"; sources remain normal webpages.
 - Each source must contain exactly "title" and "url".
 - Use real URLs from the research results.
@@ -1250,59 +1252,124 @@ Do not use markdown fences.
 }
 
 
+async function isUsableImageUrl(url: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return false;
+
+    const contentType = response.headers.get("content-type") || "";
+    return contentType.toLowerCase().startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
+async function extractOgImage(source: ReportSource) {
+  try {
+    const response = await fetch(source.url, {
+      headers: {
+        "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) return null;
+
+    const html = (await response.text()).slice(0, 1000000);
+    const imageMatch =
+      html.match(
+        /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+      ) ||
+      html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*>/i,
+      ) ||
+      html.match(
+        /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["'][^>]*>/i,
+      );
+
+    if (!imageMatch?.[1]) return null;
+
+    const imageUrl = new URL(imageMatch[1], source.url);
+    if (!/^https?:$/i.test(imageUrl.protocol)) return null;
+
+    const normalized = imageUrl.toString();
+
+    if (!(await isUsableImageUrl(normalized))) return null;
+
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
 async function hydrateReportImages(report: HeritageReport): Promise<HeritageReport> {
-  const sources = (report.sources || []).slice(0, 6);
   const images: ReportImage[] = [];
+
+  for (const image of Array.isArray(report.images) ? report.images : []) {
+    if (images.length >= 4) break;
+    if (
+      !image ||
+      typeof image.url !== "string" ||
+      typeof image.title !== "string" ||
+      typeof image.source_url !== "string" ||
+      !/^https?:\/\//i.test(image.url) ||
+      !/^https?:\/\//i.test(image.source_url)
+    ) {
+      continue;
+    }
+
+    if (!(await isUsableImageUrl(image.url))) continue;
+
+    images.push({
+      url: image.url.trim(),
+      title: image.title.trim(),
+      source_url: image.source_url.trim(),
+    });
+  }
+
+  const sources = (report.sources || []).slice(0, 12);
 
   for (const source of sources) {
     if (images.length >= 4) break;
 
-    try {
-      const response = await fetch(source.url, {
-        headers: {
-          "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
-        },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) continue;
-
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("text/html")) continue;
-
-      const html = (await response.text()).slice(0, 800000);
-      const imageMatch = html.match(
-        /<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
-      ) || html.match(
-        /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:image["'][^"']*["'][^>]*>/i,
-      );
-
-      if (!imageMatch?.[1]) continue;
-
-      let imageUrl: URL;
-      try {
-        imageUrl = new URL(imageMatch[1], source.url);
-      } catch {
-        continue;
-      }
-
-      if (!/^https?:$/i.test(imageUrl.protocol)) continue;
-
-      const normalized = imageUrl.toString();
-      if (images.some((image) => image.url === normalized)) continue;
-
-      images.push({
-        url: normalized,
-        title: source.title,
-        source_url: source.url,
-      });
-    } catch {
+    const imageUrl = await extractOgImage(source);
+    if (!imageUrl || images.some((image) => image.url === imageUrl)) {
       continue;
     }
+
+    images.push({
+      url: imageUrl,
+      title: source.title,
+      source_url: source.url,
+    });
   }
+
+  const imageBySource = new Map(
+    images.map((image) => [image.source_url, image.url]),
+  );
+
+  const places = (report.places || []).map((place) => {
+    if (!place.image_url || !/^https?:\/\//i.test(place.image_url)) {
+      return place;
+    }
+
+    return imageBySource.has(place.image_url)
+      ? place
+      : place;
+  });
 
   return {
     ...report,
+    places,
     images,
   };
 }
