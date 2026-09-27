@@ -652,15 +652,20 @@ function normalizeHeritageReport(
     source.report_metadata?.research_editor_evaluation ||
     `A research-led heritage journey focused on the family clue associated with ${trip.ancestral_place}.`;
 
-  const enrichedPlaces = places.map((item) => ({
-    ...item,
-    map_url:
-      item.name && item.location
+  const enrichedPlaces = places.map((item) => {
+    const mapQuery = [item.name, item.location]
+      .filter(Boolean)
+      .join(", ");
+
+    return {
+      ...item,
+      map_url: mapQuery
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            [item.name, item.location].filter(Boolean).join(", "),
+            mapQuery,
           )}`
         : undefined,
-  }));
+    };
+  });
 
   return {
     title:
