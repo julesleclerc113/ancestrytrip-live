@@ -223,11 +223,7 @@ function ReportExperience({
               <div className="report-kicker">THE PLACE ON THE MAP</div>
               <h3>{selectedPlace?.name}</h3>
               <p>
-                {mapLoading
-                  ? "Resolving the selected research location..."
-                  : mapCoordinates
-                    ? "Street-level map view centred on the selected research location."
-                    : "This location could not be resolved precisely enough for an embedded map."}
+                Street-level map view for the selected research location.
               </p>
             </div>
             {selectedPlace?.map_url && (
@@ -240,7 +236,7 @@ function ReportExperience({
               </a>
             )}
           </div>
-          {mapEmbedUrl ? (
+          {mapEmbedUrl && (
             <div className="real-research-map-frame">
               <iframe
                 src={mapEmbedUrl}
@@ -248,14 +244,6 @@ function ReportExperience({
                 loading="lazy"
                 referrerPolicy="strict-origin-when-cross-origin"
               />
-            </div>
-          ) : (
-            <div className="real-research-map-unavailable" role="status">
-              {mapLoading
-                ? "Finding the exact map location..."
-                : mapError
-                  ? "No precise map location was found. The report will not show a misleading world map."
-                  : "No precise map location is available."}
             </div>
           )}
           <div className="real-research-map-credit">
