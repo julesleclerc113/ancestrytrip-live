@@ -269,7 +269,7 @@ function ReportExperience({
               return (
                 <button
                   type="button"
-                  className={"research-map-pin" + (selectedPlaceIndex === index ? " is-active" : "")}
+                  className="research-map-pin"
                   onClick={() => selectMapPlace(index)}
                   aria-label={"Show " + place.name + " in the map"}
                   style={{ left: (x / 10) + "%", top: (y / 2.6) + "%" }}
