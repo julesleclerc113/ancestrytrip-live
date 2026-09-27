@@ -97,75 +97,16 @@ function ReportExperience({
   const itinerary = report.itinerary || [];
   const leads = report.research_leads || [];
   const images = report.images || [];
-  const [mapEmbedUrl, setMapEmbedUrl] = useState("");
+  const primaryPlace = places[0];
+  const primaryPlaceQuery = primaryPlace
+    ? [primaryPlace.name, primaryPlace.location].filter(Boolean).join(", ")
+    : "";
 
-  useEffect(() => {
-    const anchor = places[0];
-    if (!anchor) {
-      setMapEmbedUrl("");
-      return;
-    }
-
-    const query = [anchor.name, anchor.location]
-      .filter(Boolean)
-      .join(", ");
-
-    if (!query) {
-      setMapEmbedUrl("");
-      return;
-    }
-
-    const controller = new AbortController();
-
-    fetch(
-      "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" +
-        encodeURIComponent(query),
-      {
-        headers: {
-          Accept: "application/json",
-        },
-        signal: controller.signal,
-      },
-    )
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Map lookup failed");
-        return (await response.json()) as Array<{
-          lat?: string;
-          lon?: string;
-        }>;
-      })
-      .then((results) => {
-        const result = results[0];
-        const lat = Number(result?.lat);
-        const lon = Number(result?.lon);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-          setMapEmbedUrl("");
-          return;
-        }
-
-        const deltaLat = 0.018;
-        const deltaLon = 0.028;
-        const bbox = [
-          lon - deltaLon,
-          lat - deltaLat,
-          lon + deltaLon,
-          lat + deltaLat,
-        ].join(",");
-
-        setMapEmbedUrl(
-          "https://www.openstreetmap.org/export/embed.html?bbox=" +
-            encodeURIComponent(bbox) +
-            "&layer=mapnik&marker=" +
-            encodeURIComponent(lat + "," + lon),
-        );
-      })
-      .catch(() => {
-        setMapEmbedUrl("");
-      });
-
-    return () => controller.abort();
-  }, [places]);
+  const mapEmbedUrl = primaryPlaceQuery
+    ? "https://www.google.com/maps?q=" +
+      encodeURIComponent(primaryPlaceQuery) +
+      "&output=embed"
+    : "";
 
   const confidenceLabel = (confidence: ReportFinding["confidence"]) => {
     if (confidence === "verified") return "VERIFIED";
@@ -304,7 +245,7 @@ function ReportExperience({
           <div className="research-map-caption">
             <span>FIELD RESEARCH</span>
             <strong>Origin → evidence → place → next lead</strong>
-            <p>The map above shows the primary place with real streets. The route below keeps the investigation order visible without pretending that research sequence is geographic distance.</p>
+            <p>The map above shows the primary researched place with real streets. The route below keeps the investigation order visible without pretending that research sequence is geographic distance.</p>
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => (
