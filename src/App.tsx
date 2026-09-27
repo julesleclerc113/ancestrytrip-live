@@ -256,14 +256,14 @@ function ReportExperience({
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => {
               const pinPositions = [
-                [60, 193],
-                [145, 143],
-                [240, 131],
-                [335, 125],
-                [500, 58],
-                [650, 88],
-                [790, 178],
-                [950, 43],
+                [60, 185],
+                [145, 135],
+                [240, 123],
+                [335, 117],
+                [500, 50],
+                [650, 80],
+                [790, 170],
+                [950, 35],
               ];
               const [x, y] = pinPositions[index] || pinPositions[pinPositions.length - 1];
               return (
