@@ -40,6 +40,8 @@ interface ReportPlace {
   research_role?: string;
   image_url?: string;
   map_url?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ReportItineraryDay {
@@ -354,6 +356,14 @@ function normalizeHeritageReport(
         item.role ||
         item.research_purpose ||
         "Relevant to the investigation",
+      latitude:
+        typeof item.latitude === "number"
+          ? item.latitude
+          : undefined,
+      longitude:
+        typeof item.longitude === "number"
+          ? item.longitude
+          : undefined,
     }))
     .slice(0, 8);
 
@@ -1380,6 +1390,95 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
   };
 }
 
+async function geocodeReportPlace(place: ReportPlace) {
+  const query = [place.name, place.location, "France"]
+    .filter(Boolean)
+    .join(", ");
+
+  if (!query) return null;
+
+  const url =
+    "https://nominatim.openstreetmap.org/search?" +
+    new URLSearchParams({
+      q: query,
+      format: "jsonv2",
+      limit: "1",
+      countrycodes: "fr",
+    }).toString();
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return null;
+
+    const results = (await response.json()) as Array<{
+      lat?: string;
+      lon?: string;
+      display_name?: string;
+      address?: {
+        postcode?: string;
+        city?: string;
+        town?: string;
+        village?: string;
+        municipality?: string;
+      };
+    }>;
+
+    const result = results[0];
+
+    if (!result?.lat || !result.lon) return null;
+
+    const latitude = Number(result.lat);
+    const longitude = Number(result.lon);
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < 41 ||
+      latitude > 52 ||
+      longitude < -6 ||
+      longitude > 10
+    ) {
+      return null;
+    }
+
+    const locationText = [
+      place.location,
+      result.display_name || "",
+      result.address?.postcode || "",
+      result.address?.city || "",
+      result.address?.town || "",
+      result.address?.village || "",
+      result.address?.municipality || "",
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const meaningfulLocationToken = place.location
+      .toLowerCase()
+      .split(/[^a-z0-9à-ÿ]+/i)
+      .find((token) => token.length >= 5 && !/^france$/i.test(token));
+
+    if (
+      meaningfulLocationToken &&
+      !locationText.includes(meaningfulLocationToken)
+    ) {
+      return null;
+    }
+
+    return { latitude, longitude };
+  } catch {
+    return null;
+  }
+}
+
 async function verifyStripeWebhookSignature(
   payload: string,
   signatureHeader: string,
@@ -2276,6 +2375,84 @@ export default {
           502,
         );
       }
+    }
+
+    if (
+      url.pathname.startsWith("/api/reports/") &&
+      url.pathname.endsWith("/map") &&
+      request.method === "GET"
+    ) {
+      const reportPath = url.pathname.slice("/api/reports/".length, -"/map".length);
+      const reportId = reportPath.replace(/\/$/, "");
+      const placeIndex = Number(url.searchParams.get("place"));
+
+      if (
+        !/^[a-f0-9-]{32,36}$/i.test(reportId) ||
+        !Number.isInteger(placeIndex) ||
+        placeIndex < 0 ||
+        placeIndex > 7
+      ) {
+        return json({ error: "Invalid map request." }, 400);
+      }
+
+      const report = await env.DB.prepare(`
+        SELECT
+          r.content_json,
+          p.payment_status
+        FROM ancestry_reports r
+        INNER JOIN ancestry_payments p
+          ON p.id = r.payment_id
+        WHERE r.id = ?
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first<{
+          content_json: string;
+          payment_status: string;
+        }>();
+
+      if (!report || report.payment_status !== "fulfilled") {
+        return json({ error: "Report not found." }, 404);
+      }
+
+      let reportContent: HeritageReport;
+
+      try {
+        reportContent = JSON.parse(report.content_json) as HeritageReport;
+      } catch {
+        return json({ error: "Stored report is invalid." }, 500);
+      }
+
+      const place = reportContent.places?.[placeIndex];
+
+      if (!place) {
+        return json({ error: "Research place not found." }, 404);
+      }
+
+      if (
+        typeof place.latitude === "number" &&
+        typeof place.longitude === "number"
+      ) {
+        return json({
+          latitude: place.latitude,
+          longitude: place.longitude,
+          source: "report",
+        });
+      }
+
+      const coordinates = await geocodeReportPlace(place);
+
+      if (!coordinates) {
+        return json(
+          { error: "This research place could not be resolved to coordinates." },
+          404,
+        );
+      }
+
+      return json({
+        ...coordinates,
+        source: "openstreetmap",
+      });
     }
 
     if (
