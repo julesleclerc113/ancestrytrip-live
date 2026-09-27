@@ -1488,9 +1488,9 @@
   height: 42px;
   display: grid;
   place-items: center;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(-45deg);
   border: 2px solid var(--at-cream);
-  border-radius: 50%;
+  border-radius: 50% 50% 50% 0;
   background: var(--at-navy);
   color: var(--at-gold-light);
   box-shadow: 0 10px 24px rgba(11,29,50,.22);
@@ -1506,7 +1506,7 @@
   z-index: 5;
   background: var(--at-gold);
   color: var(--at-navy);
-  transform: translate(-50%, -50%) scale(1.13);
+  transform: translate(-50%, -50%) rotate(-45deg) scale(1.13);
   outline: none;
 }
 
@@ -1517,6 +1517,7 @@
 .site-shell.success-page .research-map-pin > span:first-child {
   font-size: .68rem;
   font-weight: 800;
+  transform: rotate(45deg);
 }
 
 .site-shell.success-page .research-map-tooltip {
@@ -1527,7 +1528,7 @@
   padding: 15px 17px;
   display: grid;
   gap: 4px;
-  transform: translate(-50%, 8px);
+  transform: translate(-50%, 8px) rotate(45deg);
   transform-origin: center bottom;
   border: 1px solid rgba(11,29,50,.14);
   border-radius: 14px;
@@ -1577,11 +1578,10 @@
 }
 
 .site-shell.success-page .research-map-pin:hover .research-map-tooltip,
-.site-shell.success-page .research-map-pin:focus-visible .research-map-tooltip,
-.site-shell.success-page .research-map-pin.is-active .research-map-tooltip {
+.site-shell.success-page .research-map-pin:focus-visible .research-map-tooltip {
   opacity: 1;
   visibility: visible;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 0) rotate(45deg);
 }
 
 .site-shell.success-page .journey-card {
