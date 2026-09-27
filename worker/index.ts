@@ -36,6 +36,10 @@ interface ReportPlace {
   location: string;
   why_it_matters: string;
   what_to_see: string;
+  category?: string;
+  research_role?: string;
+  image_url?: string;
+  map_url?: string;
 }
 
 interface ReportItineraryDay {
@@ -149,6 +153,9 @@ function buildFallbackReport(
           "This is the primary geographic clue in your family history.",
         what_to_see:
           "Begin with the historic centre, local archive or museum, parish or civil-record resources, and a local cemetery where relevant.",
+        category: "Origin",
+        research_role: "Primary geographic anchor",
+        map_url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.ancestral_place)}`,
       },
     ],
     itinerary: Array.from(
@@ -337,6 +344,16 @@ function normalizeHeritageReport(
         item.description ||
         item.target_records ||
         "Review the relevant collections and historical material.",
+      category:
+        item.category ||
+        item.place_type ||
+        item.type ||
+        "Research site",
+      research_role:
+        item.research_role ||
+        item.role ||
+        item.research_purpose ||
+        "Relevant to the investigation",
     }))
     .slice(0, 8);
 
@@ -635,6 +652,16 @@ function normalizeHeritageReport(
     source.report_metadata?.research_editor_evaluation ||
     `A research-led heritage journey focused on the family clue associated with ${trip.ancestral_place}.`;
 
+  const enrichedPlaces = places.map((item) => ({
+    ...item,
+    map_url:
+      item.name && item.location
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            [item.name, item.location].filter(Boolean).join(", "),
+          )}`
+        : undefined,
+  }));
+
   return {
     title:
       source.report_metadata?.report_type ||
@@ -653,7 +680,7 @@ function normalizeHeritageReport(
         trip.ancestral_place
       }.`,
     findings,
-    places,
+    places: enrichedPlaces,
     itinerary,
     research_leads: researchLeads,
     practical_notes: practicalNotes,
@@ -920,7 +947,9 @@ Return exactly one JSON object with these top-level fields and no others:
       "name": "Specific place, archive, institution, church, cemetery, district or landmark",
       "location": "Specific address or location",
       "why_it_matters": "Why this place matters to the family investigation.",
-      "what_to_see": "What the traveller should see, request, inspect or investigate there."
+      "what_to_see": "What the traveller should see, request, inspect or investigate there.",
+      "category": "Origin | Archive | Church | Cemetery | Museum | Historic district | Landmark | Other",
+      "research_role": "The specific role this place plays in the investigation."
     }
   ],
   "itinerary": [
@@ -965,6 +994,7 @@ FIELD RULES
 - "images" must be an array. It is optional research metadata used to enrich the visual report; if you cannot identify a real image URL from a consulted webpage, return an empty array.
 - Never invent an image URL. Only use image URLs actually present on a consulted webpage, and pair each image with the webpage URL in "source_url".
 - Prefer 2-4 representative place images from official archive, museum, heritage, municipal, library or established institutional pages.
+- If you identify a real image URL that clearly depicts a specific place in the "places" list, you may include it as "image_url" on that place; otherwise omit it. Never guess an image URL.
 - Keep image URLs separate from "sources"; sources remain normal webpages.
 - Each source must contain exactly "title" and "url".
 - Use real URLs from the research results.
@@ -981,6 +1011,9 @@ FIELD RULES
 - Never invent a family relationship merely because a person has the same or similar surname.
 - Keep the distinction between established evidence, probable interpretation and research lead explicit.
 - Include actual institutions, places and record types wherever the research supports them.
+- For every place, set "category" to one concise useful type and "research_role" to the specific investigative role of that place.
+- Order places in the sequence that makes sense for the investigation, starting with the strongest geographic/family anchor and then following the research trail.
+- Do not provide latitude, longitude, or other invented geographic coordinates.
 - The itinerary must be based on the research findings and places, not generic tourism advice.
 - Each itinerary day must connect to at least one finding, place, or research lead from the report.
 - Avoid repeating the same generic activity across multiple days. Each day should advance the investigation.
