@@ -249,3 +249,257 @@
     animation: none;
   }
 }
+
+
+/* Homepage visual atlas — full-bleed imagery between the hero and process. */
+.site-shell:not(.success-page) .heritage-visual-band {
+  position: relative;
+  width: 100%;
+  min-height: 760px;
+  padding: clamp(80px, 9vw, 140px) clamp(22px, 4vw, 64px);
+  display: grid;
+  grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
+  gap: clamp(38px, 6vw, 100px);
+  align-items: center;
+  overflow: hidden;
+  background: var(--at-cream);
+  color: var(--at-ink);
+}
+
+.site-shell:not(.success-page) .heritage-visual-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(177,138,67,.13), transparent 22rem),
+    linear-gradient(90deg, rgba(11,29,50,.035) 1px, transparent 1px);
+  background-size: auto, 72px 72px;
+}
+
+.site-shell:not(.success-page) .heritage-visual-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 620px;
+}
+
+.site-shell:not(.success-page) .heritage-visual-copy .kicker {
+  color: var(--at-gold);
+}
+
+.site-shell:not(.success-page) .heritage-visual-copy h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.4rem, 6vw, 7rem);
+  font-weight: 500;
+  line-height: .9;
+  letter-spacing: -.065em;
+}
+
+.site-shell:not(.success-page) .heritage-visual-copy h2 em {
+  color: var(--at-gold);
+  font-style: italic;
+}
+
+.site-shell:not(.success-page) .heritage-visual-copy p {
+  max-width: 510px;
+  margin: 28px 0 0;
+  color: rgba(23,40,58,.7);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.site-shell:not(.success-page) .visual-route {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 38px;
+  color: var(--at-navy-3);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.site-shell:not(.success-page) .visual-route i {
+  width: 42px;
+  height: 1px;
+  background: var(--at-gold);
+  transform-origin: left;
+  animation: ancestry-route-draw 2.8s ease-in-out infinite alternate;
+}
+
+.site-shell:not(.success-page) .heritage-collage {
+  position: relative;
+  z-index: 2;
+  min-height: 600px;
+}
+
+.site-shell:not(.success-page) .heritage-collage figure {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(11,29,50,.12);
+  box-shadow: 0 28px 70px rgba(11,29,50,.16);
+}
+
+.site-shell:not(.success-page) .heritage-collage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1s cubic-bezier(.2,.8,.2,1);
+}
+
+.site-shell:not(.success-page) .heritage-collage figure:hover img {
+  transform: scale(1.055);
+}
+
+.site-shell:not(.success-page) .collage-main {
+  inset: 2% 20% 8% 0;
+  border-radius: 28px 28px 100px 28px;
+  transform: rotate(-1.2deg);
+}
+
+.site-shell:not(.success-page) .collage-main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(11,29,50,.7));
+  pointer-events: none;
+}
+
+.site-shell:not(.success-page) .collage-main figcaption {
+  position: absolute;
+  z-index: 2;
+  left: 28px;
+  bottom: 25px;
+  color: #f3ead7;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.site-shell:not(.success-page) .collage-small {
+  width: 37%;
+  height: 31%;
+  right: 0;
+  border-radius: 18px;
+}
+
+.site-shell:not(.success-page) .collage-village {
+  top: 0;
+  transform: rotate(2.5deg);
+}
+
+.site-shell:not(.success-page) .collage-archive {
+  right: 4%;
+  bottom: 2%;
+  transform: rotate(-2deg);
+}
+
+.site-shell:not(.success-page) .collage-map {
+  position: absolute;
+  z-index: 5;
+  right: 17%;
+  top: 35%;
+  width: 205px;
+  height: 170px;
+  overflow: hidden;
+  border: 1px solid rgba(177,138,67,.55);
+  border-radius: 18px;
+  background:
+    linear-gradient(30deg, transparent 47%, rgba(11,29,50,.12) 48%, transparent 49%),
+    linear-gradient(150deg, transparent 46%, rgba(11,29,50,.1) 47%, transparent 48%),
+    #f8f1e3;
+  box-shadow: 0 22px 50px rgba(11,29,50,.2);
+  transform: rotate(3deg);
+}
+
+.site-shell:not(.success-page) .collage-map strong {
+  position: absolute;
+  left: 17px;
+  bottom: 14px;
+  color: var(--at-navy);
+  font-size: 8px;
+  letter-spacing: .16em;
+}
+
+.site-shell:not(.success-page) .map-route-line {
+  position: absolute;
+  width: 145px;
+  height: 55px;
+  left: 30px;
+  top: 42px;
+  border: 2px dashed rgba(177,138,67,.85);
+  border-color: rgba(177,138,67,.85) transparent transparent transparent;
+  border-radius: 50%;
+  transform: rotate(-15deg);
+  animation: ancestry-map-route 4s ease-in-out infinite;
+}
+
+.site-shell:not(.success-page) .collage-pin {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--at-paper);
+  border-radius: 50%;
+  background: var(--at-gold);
+  box-shadow: 0 0 0 4px rgba(177,138,67,.15);
+}
+
+.site-shell:not(.success-page) .pin-a { left: 35px; top: 91px; }
+.site-shell:not(.success-page) .pin-b { left: 103px; top: 52px; }
+.site-shell:not(.success-page) .pin-c { right: 35px; top: 83px; }
+
+@keyframes ancestry-route-draw {
+  from { transform: scaleX(.55); opacity: .45; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes ancestry-map-route {
+  0%, 100% { transform: rotate(-15deg) translateX(-3px); }
+  50% { transform: rotate(-10deg) translateX(5px); }
+}
+
+@media (max-width: 900px) {
+  .site-shell:not(.success-page) .heritage-visual-band {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .site-shell:not(.success-page) .heritage-collage {
+    min-height: 620px;
+  }
+}
+
+@media (max-width: 600px) {
+  .site-shell:not(.success-page) .heritage-visual-band {
+    padding: 72px 18px;
+  }
+
+  .site-shell:not(.success-page) .heritage-collage {
+    min-height: 510px;
+  }
+
+  .site-shell:not(.success-page) .collage-main {
+    inset: 5% 8% 13% 0;
+  }
+
+  .site-shell:not(.success-page) .collage-small {
+    width: 42%;
+  }
+
+  .site-shell:not(.success-page) .collage-map {
+    right: 7%;
+    top: 40%;
+    width: 170px;
+    height: 145px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-shell:not(.success-page) .visual-route i,
+  .site-shell:not(.success-page) .map-route-line {
+    animation: none;
+  }
+}
