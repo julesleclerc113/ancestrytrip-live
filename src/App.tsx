@@ -251,20 +251,19 @@ function ReportExperience({
           </div>
           <div className="research-map-caption">
             <span>FIELD RESEARCH</span>
-            <strong>Origin → evidence → place → next lead</strong>
             <p>Choose a location below to move the live street map above to that place. The route itself shows research order, not geographic distance.</p>
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => {
               const pinPositions = [
-                [60, 205],
-                [145, 155],
-                [240, 143],
-                [335, 137],
-                [500, 70],
-                [650, 100],
-                [790, 190],
-                [950, 55],
+                [60, 193],
+                [145, 143],
+                [240, 131],
+                [335, 125],
+                [500, 58],
+                [650, 88],
+                [790, 178],
+                [950, 43],
               ];
               const [x, y] = pinPositions[index] || pinPositions[pinPositions.length - 1];
               return (
