@@ -97,16 +97,23 @@ function ReportExperience({
   const itinerary = report.itinerary || [];
   const leads = report.research_leads || [];
   const images = report.images || [];
-  const primaryPlace = places[0];
-  const primaryPlaceQuery = primaryPlace
-    ? [primaryPlace.name, primaryPlace.location].filter(Boolean).join(", ")
+  const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
+  const selectedPlace = places[selectedPlaceIndex] || places[0];
+  const selectedPlaceQuery = selectedPlace
+    ? [selectedPlace.name, selectedPlace.location].filter(Boolean).join(", ")
     : "";
 
-  const mapEmbedUrl = primaryPlaceQuery
+  const mapEmbedUrl = selectedPlaceQuery
     ? "https://www.google.com/maps?q=" +
-      encodeURIComponent(primaryPlaceQuery) +
+      encodeURIComponent(selectedPlaceQuery) +
       "&output=embed"
     : "";
+
+  function selectMapPlace(index: number) {
+    if (index >= 0 && index < places.length) {
+      setSelectedPlaceIndex(index);
+    }
+  }
 
   const confidenceLabel = (confidence: ReportFinding["confidence"]) => {
     if (confidence === "verified") return "VERIFIED";
@@ -202,15 +209,15 @@ function ReportExperience({
             <div className="real-research-map-head">
               <div>
                 <div className="report-kicker">THE PLACE ON THE MAP</div>
-                <h3>{places[0]?.name}</h3>
-                <p>Street-level map view centred on the primary place in the research route.</p>
+                <h3>{selectedPlace?.name}</h3>
+                <p>Street-level map view centred on the selected research location.</p>
               </div>
               <a
                 href={
-                  places[0]?.map_url ||
+                  selectedPlace?.map_url ||
                   "https://www.google.com/maps/search/?api=1&query=" +
                     encodeURIComponent(
-                      [places[0]?.name, places[0]?.location]
+                      [selectedPlace?.name, selectedPlace?.location]
                         .filter(Boolean)
                         .join(", "),
                     )
@@ -224,13 +231,13 @@ function ReportExperience({
             <div className="real-research-map-frame">
               <iframe
                 src={mapEmbedUrl}
-                title={"Map of " + (places[0]?.name || "the research place")}
+                title={"Map of " + (selectedPlace?.name || "the research place")}
                 loading="lazy"
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
             <div className="real-research-map-credit">
-              Map data © OpenStreetMap contributors
+              Interactive map via Google Maps
             </div>
           </div>
         )}
@@ -249,26 +256,31 @@ function ReportExperience({
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => (
-              <a
-                className="research-map-pin"
-                href={place.map_url || "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place.name + ", " + place.location)}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                className={"research-map-pin" + (selectedPlaceIndex === index ? " is-active" : "")}
+                onClick={() => selectMapPlace(index)}
+                aria-label={"Show " + place.name + " in the map"}
                 style={{ left: (8 + (index / Math.max(1, Math.min(places.length - 1, 7))) * 84) + "%", top: (58 - Math.sin(index * 1.45) * 27) + "%" }}
                 key={"pin-" + place.name + "-" + index}
                 aria-label={"Open " + place.name + " in maps"}
               >
                 <span>{String(index + 1).padStart(2, "0")}</span>
-              </a>
+              </button>
             ))}
           </div>
           <div className="research-map-legend">
             {places.slice(0, 6).map((place, index) => (
-              <a href={"#place-" + (index + 1)} key={"legend-" + place.name + "-" + index}>
+              <button
+                type="button"
+                className={"research-map-location" + (selectedPlaceIndex === index ? " is-active" : "")}
+                onClick={() => selectMapPlace(index)}
+                key={"legend-" + place.name + "-" + index}
+              >
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <strong>{place.name}</strong>
                 <small>{place.category || "Research site"}</small>
-              </a>
+              </button>
             ))}
           </div>
         </div>
