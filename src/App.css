@@ -1997,55 +1997,6 @@ button:disabled {
 
 
 
-/* Visual polish: keep the research note below the hero image rather than over it. */
-.site-shell:not(.success-page) .hero-visual {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.site-shell:not(.success-page) .hero-visual .floating-note {
-  position: relative;
-  right: auto;
-  bottom: auto;
-  align-self: flex-end;
-  margin-top: 18px;
-  animation: ancestry-float 5s ease-in-out infinite;
-}
-
-/* The preview now sits on a cream surface, so its text needs ink contrast. */
-.site-shell:not(.success-page) .preview-section {
-  color: #17231d;
-}
-
-.site-shell:not(.success-page) .preview-section .kicker {
-  color: #8d6a3c;
-}
-
-.site-shell:not(.success-page) .preview-section .preview-header h2 {
-  color: #17231d;
-}
-
-.site-shell:not(.success-page) .preview-section .preview-pill {
-  border-color: rgba(23,35,29,.18);
-  color: #405047;
-}
-
-.site-shell:not(.success-page) .preview-section .preview-lead {
-  color: #425048;
-}
-
-.site-shell:not(.success-page) .preview-section .highlight-list article {
-  border-color: rgba(23,35,29,.14);
-}
-
-.site-shell:not(.success-page) .preview-section .highlight-number {
-  color: #9a6d39;
-}
-
-.site-shell:not(.success-page) .preview-section .highlight-list p {
-  color: #26382d;
-}
 
 /* Homepage visual redesign v3 — full-window editorial travel experience */
 html {
@@ -2688,4 +2639,53 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* Final contrast and layout polish for the current homepage redesign. */
+.site-shell:not(.success-page) .hero-visual {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-shell:not(.success-page) .hero-visual .floating-note {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  align-self: flex-end;
+  margin-top: 18px;
+  animation: ancestry-float 5s ease-in-out infinite;
+}
+
+.site-shell:not(.success-page) .preview-section {
+  color: #17231d;
+}
+
+.site-shell:not(.success-page) .preview-section .kicker {
+  color: #8d6a3c;
+}
+
+.site-shell:not(.success-page) .preview-section .preview-header h2 {
+  color: #17231d;
+}
+
+.site-shell:not(.success-page) .preview-section .preview-pill {
+  border-color: rgba(23,35,29,.18);
+  color: #405047;
+}
+
+.site-shell:not(.success-page) .preview-section .preview-lead {
+  color: #425048;
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-list article {
+  border-color: rgba(23,35,29,.14);
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-number {
+  color: #9a6d39;
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-list p {
+  color: #26382d;
 }
