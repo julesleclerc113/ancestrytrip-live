@@ -2719,3 +2719,38 @@ html {
   font-size: 1.3rem;
   align-self: center;
 }
+
+
+/* Keep the free-preview text readable on the archival navy background. */
+.site-shell:not(.success-page) .preview-section {
+  color: #f4f0e7;
+}
+
+.site-shell:not(.success-page) .preview-section .kicker {
+  color: #d8b889;
+}
+
+.site-shell:not(.success-page) .preview-section .preview-header h2 {
+  color: #f4f0e7;
+}
+
+.site-shell:not(.success-page) .preview-section .preview-pill {
+  border-color: rgba(244,240,231,.2);
+  color: rgba(244,240,231,.68);
+}
+
+.site-shell:not(.success-page) .preview-section .preview-lead {
+  color: rgba(244,240,231,.66);
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-list article {
+  border-color: rgba(244,240,231,.12);
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-number {
+  color: #d8b889;
+}
+
+.site-shell:not(.success-page) .preview-section .highlight-list p {
+  color: #f4f0e7;
+}
