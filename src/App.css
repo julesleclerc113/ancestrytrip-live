@@ -2700,6 +2700,11 @@ html {
 }
 
 
+/* Match the How It Works section label to the homepage gold accent. */
+.site-shell:not(.success-page) .how-section .section-intro .kicker {
+  color: #d8b889;
+}
+
 /* Center and enlarge the How It Works icons without shifting the card text. */
 .site-shell:not(.success-page) .how-section .step-icon {
   width: 50px;
