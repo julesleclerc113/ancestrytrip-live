@@ -519,3 +519,25 @@
     radial-gradient(circle at 12% 20%, rgba(177,138,67,.13), transparent 22rem);
   background-size: auto;
 }
+
+
+/* Final pricing background: this stylesheet loads after App.css, so keep the heritage image here. */
+.site-shell:not(.success-page) .pricing-section {
+  background-image:
+    linear-gradient(rgba(243,234,215,.26), rgba(243,234,215,.40)),
+    url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=85");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .pricing-section {
+    background-image:
+      linear-gradient(rgba(243,234,215,.34), rgba(243,234,215,.48)),
+      url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+}
