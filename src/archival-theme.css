@@ -667,3 +667,46 @@
     background-position: center 12%;
   }
 }
+
+
+/* Restore the original How It Works palette and use a clearly visible heritage seascape. */
+.site-shell:not(.success-page) .how-section {
+  background-image:
+    url("https://images.unsplash.com/photo-1740299200633-57750866b54f?auto=format&fit=crop&w=2200&q=90");
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro h2 {
+  color: #17231d;
+  text-shadow: none;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro p {
+  color: #425048;
+  font-weight: 400;
+  text-shadow: none;
+}
+
+.site-shell:not(.success-page) .how-section .section-intro .kicker {
+  color: #d8b889;
+  text-shadow: none;
+}
+
+.site-shell:not(.success-page) .how-section .step-card h3 {
+  color: #202a23;
+}
+
+.site-shell:not(.success-page) .how-section .step-card p {
+  color: #4f5850;
+  font-weight: 400;
+}
+
+@media (max-width: 800px) {
+  .site-shell:not(.success-page) .how-section {
+    background-image:
+      url("https://images.unsplash.com/photo-1740299200633-57750866b54f?auto=format&fit=crop&w=1600&q=90");
+    background-position: center center;
+  }
+}
