@@ -101,96 +101,22 @@ function ReportExperience({
   const leads = report.research_leads || [];
   const images = report.images || [];
   const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
-  const [mapCoordinates, setMapCoordinates] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [mapLoading, setMapLoading] = useState(false);
-  const [mapError, setMapError] = useState(false);
   const selectedPlace = places[selectedPlaceIndex] || places[0];
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function resolveMap() {
-      setMapError(false);
-
-      if (!selectedPlace) {
-        setMapCoordinates(null);
-        return;
-      }
-
-      if (
-        typeof selectedPlace.latitude === "number" &&
-        typeof selectedPlace.longitude === "number"
-      ) {
-        setMapCoordinates({
-          latitude: selectedPlace.latitude,
-          longitude: selectedPlace.longitude,
-        });
-        return;
-      }
-
-      setMapCoordinates(null);
-      setMapLoading(true);
-
-      try {
-        const reportId = window.location.pathname.startsWith("/report/")
-          ? window.location.pathname.slice("/report/".length)
-          : "";
-
-        if (!reportId) {
-          throw new Error("No report ID.");
-        }
-
-        const response = await fetch(
-          `/api/reports/${encodeURIComponent(reportId)}/map?place=${selectedPlaceIndex}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Map location could not be resolved.");
-        }
-
-        const data = (await response.json()) as {
-          latitude?: number;
-          longitude?: number;
-        };
-
-        if (
-          !cancelled &&
-          typeof data.latitude === "number" &&
-          typeof data.longitude === "number"
-        ) {
-          setMapCoordinates({
-            latitude: data.latitude,
-            longitude: data.longitude,
-          });
-        } else if (!cancelled) {
-          setMapError(true);
-        }
-      } catch {
-        if (!cancelled) {
-          setMapError(true);
-        }
-      } finally {
-        if (!cancelled) {
-          setMapLoading(false);
-        }
-      }
-    }
-
-    void resolveMap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedPlaceIndex, selectedPlace]);
-
-  const selectedPlaceMapQuery = mapCoordinates
-    ? mapCoordinates.latitude + "," + mapCoordinates.longitude
+  // Keep map selection instant and deterministic. Google Maps can resolve
+  // a place name together with its concrete locality without a geocoding
+  // request, API key, or extra network round-trip.
+  const selectedPlaceLocality = selectedPlace?.location
+    ? selectedPlace.location.split(",").at(-1)?.trim() || ""
     : "";
 
-  const mapEmbedUrl = mapCoordinates
+  const selectedPlaceMapQuery = selectedPlace
+    ? [selectedPlace.name, selectedPlaceLocality, "France"]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
+  const mapEmbedUrl = selectedPlaceMapQuery
     ? "https://www.google.com/maps?q=" +
       encodeURIComponent(selectedPlaceMapQuery) +
       "&output=embed"
