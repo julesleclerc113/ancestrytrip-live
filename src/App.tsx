@@ -97,6 +97,75 @@ function ReportExperience({
   const itinerary = report.itinerary || [];
   const leads = report.research_leads || [];
   const images = report.images || [];
+  const [mapEmbedUrl, setMapEmbedUrl] = useState("");
+
+  useEffect(() => {
+    const anchor = places[0];
+    if (!anchor) {
+      setMapEmbedUrl("");
+      return;
+    }
+
+    const query = [anchor.name, anchor.location]
+      .filter(Boolean)
+      .join(", ");
+
+    if (!query) {
+      setMapEmbedUrl("");
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch(
+      "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" +
+        encodeURIComponent(query),
+      {
+        headers: {
+          Accept: "application/json",
+        },
+        signal: controller.signal,
+      },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Map lookup failed");
+        return (await response.json()) as Array<{
+          lat?: string;
+          lon?: string;
+        }>;
+      })
+      .then((results) => {
+        const result = results[0];
+        const lat = Number(result?.lat);
+        const lon = Number(result?.lon);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          setMapEmbedUrl("");
+          return;
+        }
+
+        const deltaLat = 0.018;
+        const deltaLon = 0.028;
+        const bbox = [
+          lon - deltaLon,
+          lat - deltaLat,
+          lon + deltaLon,
+          lat + deltaLat,
+        ].join(",");
+
+        setMapEmbedUrl(
+          "https://www.openstreetmap.org/export/embed.html?bbox=" +
+            encodeURIComponent(bbox) +
+            "&layer=mapnik&marker=" +
+            encodeURIComponent(lat + "," + lon),
+        );
+      })
+      .catch(() => {
+        setMapEmbedUrl("");
+      });
+
+    return () => controller.abort();
+  }, [places]);
 
   const confidenceLabel = (confidence: ReportFinding["confidence"]) => {
     if (confidence === "verified") return "VERIFIED";
@@ -187,6 +256,44 @@ function ReportExperience({
           </div>
           <span className="report-section-count">Interactive route</span>
         </div>
+        {mapEmbedUrl && (
+          <div className="real-research-map">
+            <div className="real-research-map-head">
+              <div>
+                <div className="report-kicker">THE PLACE ON THE MAP</div>
+                <h3>{places[0]?.name}</h3>
+                <p>Street-level map view centred on the primary place in the research route.</p>
+              </div>
+              <a
+                href={
+                  places[0]?.map_url ||
+                  "https://www.google.com/maps/search/?api=1&query=" +
+                    encodeURIComponent(
+                      [places[0]?.name, places[0]?.location]
+                        .filter(Boolean)
+                        .join(", "),
+                    )
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open in Google Maps →
+              </a>
+            </div>
+            <div className="real-research-map-frame">
+              <iframe
+                src={mapEmbedUrl}
+                title={"Map of " + (places[0]?.name || "the research place")}
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+            <div className="real-research-map-credit">
+              Map data © OpenStreetMap contributors
+            </div>
+          </div>
+        )}
+
         <div className="research-map">
           <div className="research-map-grid" aria-hidden="true" />
           <div className="research-map-route" aria-hidden="true">
@@ -197,7 +304,7 @@ function ReportExperience({
           <div className="research-map-caption">
             <span>FIELD RESEARCH</span>
             <strong>Origin → evidence → place → next lead</strong>
-            <p>The route follows the order of the investigation. Location links open the researched place in a map service; no unverified coordinates are presented.</p>
+            <p>The map above shows the primary place with real streets. The route below keeps the investigation order visible without pretending that research sequence is geographic distance.</p>
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => (
