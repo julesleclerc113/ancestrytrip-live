@@ -2862,3 +2862,73 @@ html {
   color: #26382d;
   font-weight: 500;
 }
+
+/* Report experience — AncestryTrip editorial heritage journal */
+.site-shell.success-page{--report-ink:#17231d;--report-muted:#58645c;--report-cream:#f3eee4;--report-paper:#fffaf1;--report-gold:#d8b889;--report-rust:#a56845;--report-line:rgba(23,35,29,.14);min-height:100svh;background:radial-gradient(circle at 8% 8%,rgba(216,184,137,.16),transparent 24rem),var(--report-cream);color:var(--report-ink)}
+.site-shell.success-page .site-header{max-width:1320px;margin:0 auto;padding:24px clamp(22px,4vw,56px);border-bottom:1px solid var(--report-line)}
+.site-shell.success-page .logo{color:var(--report-ink)}
+.site-shell.success-page main{width:100%}
+.site-shell.success-page .success-section{width:min(1240px,calc(100% - 40px));margin:54px auto 100px}
+.site-shell.success-page .success-card{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.site-shell.success-page .report-hero{grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);gap:0;margin:0 0 26px}
+.site-shell.success-page .report-hero-copy{min-height:540px;padding:clamp(34px,5vw,68px);border-radius:28px 0 0 28px;background:var(--report-paper);border:1px solid var(--report-line);border-right:0;justify-content:center}
+.site-shell.success-page .report-kicker{color:#a07848}
+.site-shell.success-page .report-hero-copy h1{max-width:760px;margin:14px 0 22px;color:var(--report-ink);font-size:clamp(44px,6vw,78px);line-height:.94}
+.site-shell.success-page .report-hero-intro{max-width:650px;color:#46534b;font-size:18px;line-height:1.7}
+.site-shell.success-page .report-hero-meta span,.site-shell.success-page .report-section-count,.site-shell.success-page .discovery-confidence{border-color:rgba(23,35,29,.16);color:#59655d;background:rgba(255,250,241,.58)}
+.site-shell.success-page .report-hero-image,.site-shell.success-page .report-hero-placeholder{min-height:540px;border-radius:0 28px 28px 0}
+.site-shell.success-page .report-hero-image{border:1px solid var(--report-line)}
+.site-shell.success-page .report-hero-image::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(10,24,17,.38));pointer-events:none}
+.site-shell.success-page .report-hero-image figcaption{z-index:1;left:22px;right:22px;bottom:22px;background:rgba(23,35,29,.78);border:1px solid rgba(255,255,255,.18);letter-spacing:.03em}
+.site-shell.success-page .report-summary-grid{grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:78px}
+.site-shell.success-page .report-summary-card{min-height:190px;padding:30px;border:1px solid var(--report-line);border-radius:20px;background:rgba(255,250,241,.78)}
+.site-shell.success-page .report-summary-card-featured{background:var(--report-ink);border-color:var(--report-ink);color:#f8f2e7}
+.site-shell.success-page .report-summary-card-featured .report-kicker{color:var(--report-gold)}
+.site-shell.success-page .report-summary-card .report-kicker{margin-bottom:14px}
+.site-shell.success-page .report-summary-card p{margin:0;color:inherit;font-size:17px;line-height:1.68}
+.site-shell.success-page .report-section{margin-top:88px;padding-top:34px;border-top:1px solid var(--report-line)}
+.site-shell.success-page .report-section-head{margin-bottom:30px}
+.site-shell.success-page .report-section-head h2{margin-top:8px;color:var(--report-ink);font-size:clamp(34px,4.4vw,54px)}
+.site-shell.success-page .discovery-grid{gap:14px}
+.site-shell.success-page .discovery-card{min-height:330px;padding:25px;border:1px solid var(--report-line);border-radius:18px;background:rgba(255,250,241,.68)}
+.site-shell.success-page .discovery-number{color:#a07848}
+.site-shell.success-page .discovery-confidence{top:23px;right:23px}
+.site-shell.success-page .discovery-card h3{color:var(--report-ink);font-size:25px}
+.site-shell.success-page .discovery-card>p,.site-shell.success-page .discovery-why p{color:#4e5a52}
+.site-shell.success-page .discovery-why{border-color:var(--report-line)}
+.site-shell.success-page .discovery-why span,.site-shell.success-page .next-grid article>div span{color:#a07848}
+.site-shell.success-page .journey-strip{gap:18px}
+.site-shell.success-page .journey-card{border:1px solid var(--report-line);border-radius:20px;background:var(--report-paper);box-shadow:0 18px 45px rgba(31,39,32,.07)}
+.site-shell.success-page .journey-card-top{padding:15px 18px}
+.site-shell.success-page .journey-index{color:#a07848}
+.site-shell.success-page .journey-card>img,.site-shell.success-page .journey-image-placeholder{height:220px}
+.site-shell.success-page .journey-card-body{padding:24px}
+.site-shell.success-page .journey-card-body h3{color:var(--report-ink);font-size:28px}
+.site-shell.success-page .journey-card-body p{color:#536057;line-height:1.62}
+.site-shell.success-page .journey-card-body .journey-matters{color:#27372d}
+.site-shell.success-page .report-image-grid{grid-template-rows:250px 250px;gap:14px}
+.site-shell.success-page .report-image-grid figure{border-radius:18px}
+.site-shell.success-page .itinerary-modern{border-top:1px solid var(--report-line)}
+.site-shell.success-page .itinerary-modern article{grid-template-columns:120px 1fr;padding:28px 0;border-bottom-color:var(--report-line)}
+.site-shell.success-page .itinerary-modern-day{color:#a07848;font-weight:800}
+.site-shell.success-page .itinerary-modern h3{color:var(--report-ink);font-size:29px}
+.site-shell.success-page .itinerary-modern p{color:#4f5b53;font-size:16px;line-height:1.65}
+.site-shell.success-page .next-grid{gap:14px}
+.site-shell.success-page .next-grid article{min-height:270px;padding:24px;border-color:var(--report-line);border-radius:18px;background:rgba(255,250,241,.7)}
+.site-shell.success-page .next-number{color:#a07848}
+.site-shell.success-page .next-grid h3{color:var(--report-ink)}
+.site-shell.success-page .report-bottom-grid{gap:14px;margin-top:70px}
+.site-shell.success-page .report-mini-card{padding:27px;border:1px solid var(--report-line);border-radius:18px;background:rgba(255,250,241,.72)}
+.site-shell.success-page .report-mini-card:first-child{background:#e1e8dc}
+.site-shell.success-page .report-mini-card .report-kicker{color:#a07848}
+.site-shell.success-page .report-mini-card ul{color:#4d5a51;line-height:1.75}
+.site-shell.success-page .report-evidence{padding-top:34px;border-top-color:var(--report-line)}
+.site-shell.success-page .report-sources{gap:0}
+.site-shell.success-page .report-sources a{padding:18px 2px;border-bottom-color:var(--report-line);color:#304037;font-size:14px}
+.site-shell.success-page .report-sources a span:last-child{color:#a56845}
+.site-shell.success-page .report-actions{justify-content:flex-start;margin-top:48px}
+.site-shell.success-page .report-actions .button-dark{border-radius:999px;padding-inline:22px}
+.site-shell.success-page .success-footer-note{margin-top:36px;padding:20px 24px;border:1px solid rgba(23,35,29,.1);border-radius:18px;background:rgba(220,228,215,.72)}
+.site-shell.success-page .success-footer-note p{color:#4f5b52}
+@media(max-width:850px){.site-shell.success-page .success-section{width:min(100% - 28px,760px);margin-top:32px}.site-shell.success-page .report-hero-copy,.site-shell.success-page .report-hero-image,.site-shell.success-page .report-hero-placeholder{min-height:380px}.site-shell.success-page .report-hero-copy{border-right:1px solid var(--report-line);border-radius:24px 24px 0 0}.site-shell.success-page .report-hero-image,.site-shell.success-page .report-hero-placeholder{border-radius:0 0 24px 24px}}
+@media(max-width:560px){.site-shell.success-page .success-section{width:min(100% - 20px,760px);margin-top:20px;margin-bottom:60px}.site-shell.success-page .site-header{padding:18px 14px}.site-shell.success-page .report-hero-copy{min-height:360px;padding:28px 24px}.site-shell.success-page .report-hero-copy h1{font-size:clamp(40px,13vw,58px)}.site-shell.success-page .report-hero-intro{font-size:16px}.site-shell.success-page .report-summary-grid{grid-template-columns:1fr;margin-bottom:50px}.site-shell.success-page .report-section{margin-top:60px}.site-shell.success-page .report-image-grid{grid-template-columns:1fr;grid-template-rows:260px}.site-shell.success-page .report-image-grid figure:first-child{grid-row:auto}.site-shell.success-page .itinerary-modern article{grid-template-columns:1fr;gap:9px}}
