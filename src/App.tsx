@@ -239,9 +239,10 @@ function ReportExperience({
           {mapEmbedUrl && (
             <div className="real-research-map-frame">
               <iframe
+                key={mapEmbedUrl}
                 src={mapEmbedUrl}
                 title={"Map of " + (selectedPlace?.name || "the research place")}
-                loading="lazy"
+                loading="eager"
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
