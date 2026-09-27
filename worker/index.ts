@@ -1137,11 +1137,25 @@ Do not use markdown fences.
     trip,
   );
 
-  if (
-    report.sources.length === 0 &&
-    annotatedSources.length > 0
-  ) {
-    report.sources = annotatedSources;
+  // Only expose sources that Gemini actually surfaced through Google Search.
+  // The model's JSON can contain plausible-looking URLs that were never consulted;
+  // those must not become customer-facing citations.
+  const annotatedByUrl = new Map<string, ReportSource>();
+
+  const sourceKey = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      parsed.hash = "";
+      parsed.search = "";
+      parsed.pathname = parsed.pathname.replace(/\/$/, "");
+      return parsed.toString();
+    } catch {
+      return url.trim();
+    }
+  };
+
+  for (const source of annotatedSources) {
+    annotatedByUrl.set(sourceKey(source.url), source);
   }
 
   const validSources = new Map<string, ReportSource>();
@@ -1155,41 +1169,30 @@ Do not use markdown fences.
       continue;
     }
 
-    const title = source.title.trim();
     const url = source.url.trim();
 
-    if (!title || !/^https?:\/\//i.test(url)) {
+    if (!url || !/^https?:\/\//i.test(url)) {
       continue;
     }
 
-    let parsedUrl: URL;
+    const verifiedSource =
+      annotatedByUrl.get(sourceKey(url));
 
-    try {
-      parsedUrl = new URL(url);
-    } catch {
+    if (!verifiedSource) {
       continue;
     }
 
-    if (
-      parsedUrl.hostname
-        .toLowerCase()
-        .endsWith("vertexaisearch.cloud.google.com")
-    ) {
-      continue;
-    }
+    validSources.set(verifiedSource.url, verifiedSource);
+  }
 
-    if (
-      /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico|pdf)(?:[?#].*)?$/i.test(
-        parsedUrl.pathname,
-      )
-    ) {
-      continue;
+  // If the model omitted its own source list, use the actual search annotations.
+  if (
+    validSources.size === 0 &&
+    annotatedSources.length > 0
+  ) {
+    for (const source of annotatedSources) {
+      validSources.set(source.url, source);
     }
-
-    validSources.set(url, {
-      title,
-      url,
-    });
   }
 
   report.sources = Array.from(
