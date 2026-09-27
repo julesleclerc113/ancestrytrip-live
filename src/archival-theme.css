@@ -1456,7 +1456,7 @@
 
 .site-shell.success-page .research-map-route {
   position: absolute;
-  inset: 130px 5% 245px;
+  inset: 130px 5% 110px;
   pointer-events: none;
 }
 
@@ -1474,44 +1474,6 @@
   stroke-dasharray: 13 13;
   filter: drop-shadow(0 3px 5px rgba(11,29,50,.14));
   animation: ancestry-route-draw 7s linear infinite;
-}
-
-.site-shell.success-page .research-map-caption {
-  position: absolute;
-  left: 34px;
-  top: 34px;
-  z-index: 2;
-  width: min(440px, calc(100% - 68px));
-  padding: 22px 24px;
-  border: 1px solid rgba(11,29,50,.12);
-  border-radius: 18px;
-  background: rgba(255,250,241,.86);
-  box-shadow: 0 14px 35px rgba(11,29,50,.08);
-  backdrop-filter: blur(6px);
-}
-
-.site-shell.success-page .research-map-caption span {
-  display: block;
-  color: var(--at-gold);
-  font-size: .68rem;
-  font-weight: 800;
-  letter-spacing: .17em;
-}
-
-.site-shell.success-page .research-map-caption strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--at-navy);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(22px, 2.6vw, 32px);
-  line-height: 1.02;
-}
-
-.site-shell.success-page .research-map-caption p {
-  margin: 10px 0 0;
-  color: #55616a;
-  font-size: .84rem;
-  line-height: 1.55;
 }
 
 .site-shell.success-page .research-map-pins {
@@ -1536,95 +1498,92 @@
   rotate: -45deg;
   animation: ancestry-map-pulse 3.2s ease-in-out infinite;
   transition: transform .25s ease, background .25s ease;
+  cursor: pointer;
 }
 
-.site-shell.success-page .research-map-pin:nth-child(2) { animation-delay: -.5s; }
-.site-shell.success-page .research-map-pin:nth-child(3) { animation-delay: -1s; }
-.site-shell.success-page .research-map-pin:nth-child(4) { animation-delay: -1.5s; }
-.site-shell.success-page .research-map-pin:nth-child(5) { animation-delay: -2s; }
-
 .site-shell.success-page .research-map-pin:hover,
+.site-shell.success-page .research-map-pin:focus-visible,
 .site-shell.success-page .research-map-pin.is-active {
   z-index: 5;
   background: var(--at-gold);
   color: var(--at-navy);
   transform: translate(-50%, -50%) scale(1.13);
+  outline: none;
 }
 
 .site-shell.success-page .research-map-pin.is-active {
   box-shadow: 0 0 0 6px rgba(210,180,111,.22), 0 12px 28px rgba(11,29,50,.25);
 }
 
-.site-shell.success-page .research-map-pin span {
+.site-shell.success-page .research-map-pin > span:first-child {
   rotate: 45deg;
   font-size: .68rem;
   font-weight: 800;
 }
 
-.site-shell.success-page .research-map-legend {
+.site-shell.success-page .research-map-tooltip {
   position: absolute;
-  left: 28px;
-  right: 28px;
-  bottom: 24px;
-  z-index: 4;
-  width: calc(100% - 56px);
+  left: 50%;
+  bottom: calc(100% + 16px);
+  width: min(260px, 42vw);
+  padding: 15px 17px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.site-shell.success-page .research-map-legend button {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  column-gap: 9px;
-  align-items: center;
-  padding: 10px 12px;
-  border: 1px solid rgba(11,29,50,.12);
-  border-radius: 11px;
-  background: rgba(255,250,241,.9);
+  gap: 4px;
+  transform: translate(-50%, 8px) rotate(45deg);
+  transform-origin: center bottom;
+  border: 1px solid rgba(11,29,50,.14);
+  border-radius: 14px;
+  background: rgba(255,250,241,.97);
   color: var(--at-navy);
-  text-decoration: none;
-  font: inherit;
+  box-shadow: 0 16px 34px rgba(11,29,50,.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
   text-align: left;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(11,29,50,.06);
-  transition: transform .2s ease, border-color .2s ease, background .2s ease;
 }
 
-.site-shell.success-page .research-map-legend button:hover,
-.site-shell.success-page .research-map-legend button.is-active {
-  transform: translateY(-2px);
-  border-color: rgba(177,138,67,.5);
-  background: rgba(255,250,241,1);
+.site-shell.success-page .research-map-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid rgba(11,29,50,.14);
+  border-bottom: 1px solid rgba(11,29,50,.14);
+  background: #fffaf1;
 }
 
-.site-shell.success-page .research-map-legend button.is-active {
-  box-shadow: 0 10px 24px rgba(11,29,50,.11);
-}
-
-.site-shell.success-page .research-map-legend button > span {
-  color: var(--at-gold);
-  font-size: .7rem;
-  font-weight: 800;
-}
-
-.site-shell.success-page .research-map-legend strong {
-  overflow: hidden;
+.site-shell.success-page .research-map-tooltip strong {
   color: var(--at-navy);
-  font-size: .74rem;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.1;
 }
 
-.site-shell.success-page .research-map-legend small {
-  grid-column: 2;
-  overflow: hidden;
-  color: #68737a;
-  font-size: .63rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.site-shell.success-page .research-map-tooltip small {
+  color: #58656e;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.site-shell.success-page .research-map-tooltip em {
+  color: var(--at-gold);
+  font-size: .62rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.site-shell.success-page .research-map-pin:hover .research-map-tooltip,
+.site-shell.success-page .research-map-pin:focus-visible .research-map-tooltip,
+.site-shell.success-page .research-map-pin.is-active .research-map-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0) rotate(45deg);
 }
 
 .site-shell.success-page .journey-card {
@@ -1710,7 +1669,7 @@
 
 @media (max-width: 800px) {
   .site-shell.success-page .research-map {
-    min-height: 720px;
+    min-height: 620px;
     padding: 20px;
   }
 
@@ -1721,37 +1680,30 @@
   }
 
   .site-shell.success-page .research-map-route {
-    inset: 230px 4% 275px;
+    inset: 230px 4% 55px;
   }
 
-  .site-shell.success-page .research-map-legend {
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    width: calc(100% - 40px);
+  .site-shell.success-page .research-map-tooltip {
+    width: min(220px, 58vw);
   }
 }
 
 @media (max-width: 520px) {
   .site-shell.success-page .research-map {
-    min-height: 850px;
+    min-height: 690px;
   }
 
   .site-shell.success-page .research-map-route {
-    inset: 220px 8% 350px;
-  }
-
-  .site-shell.success-page .research-map-legend {
-    grid-template-columns: 1fr;
-  }
-
-  .site-shell.success-page .research-map-legend button:nth-child(n+5) {
-    display: none;
+    inset: 220px 7% 45px;
   }
 
   .site-shell.success-page .research-map-pin {
     width: 36px;
     height: 36px;
+  }
+
+  .site-shell.success-page .research-map-tooltip {
+    width: min(200px, 68vw);
   }
 }
 
