@@ -104,9 +104,8 @@ function ReportExperience({
     : "";
 
   const mapEmbedUrl = selectedPlaceQuery
-    ? "https://www.google.com/maps?q=" +
-      encodeURIComponent(selectedPlaceQuery) +
-      "&output=embed"
+    ? "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(selectedPlaceQuery)
     : "";
 
   function selectMapPlace(index: number) {
