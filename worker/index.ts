@@ -836,6 +836,18 @@ If it does none of these things, leave it out even if it is a popular tourist at
 
 For places, prefer 5-8 genuinely relevant locations rather than padding the list.
 
+EVIDENCE COVERAGE STANDARD
+
+The finished report must contain a useful evidence layer even when the family connection is not proven.
+
+- Produce 2-6 findings when the research supports them.
+- Every finding must state a concrete fact, the evidence behind it, and why it matters.
+- At least one finding should address the strongest direct family clue or explicitly state that no direct family-specific result was found.
+- Do not fill the findings array with generic statements about the town.
+- If direct family evidence is absent, make that absence explicit and use the findings to document the most useful place, archive, jurisdiction or record-system facts that determine the next research step.
+- Produce 4-8 research leads when the available evidence allows it. Each lead must name a real institution, collection, database or record type and a specific question to investigate.
+- Practical notes should be actionable and location-specific where possible: archive access, appointment requirements, relevant jurisdictions, record languages, opening constraints, or other facts that affect the trip.
+
 I. PLAN THE JOURNEY FROM THE EVIDENCE
 
 The itinerary must follow the research trail discovered above.
@@ -970,6 +982,8 @@ FIELD RULES
 - Keep the distinction between established evidence, probable interpretation and research lead explicit.
 - Include actual institutions, places and record types wherever the research supports them.
 - The itinerary must be based on the research findings and places, not generic tourism advice.
+- Each itinerary day must connect to at least one finding, place, or research lead from the report.
+- Avoid repeating the same generic activity across multiple days. Each day should advance the investigation.
 - Every source must contain both "title" and "url".
 - Every "url" must be a complete HTTP or HTTPS webpage URL.
 - Do not use URLs ending in image or media file extensions such as .jpg, .jpeg, .png, .gif, .webp or .pdf.
