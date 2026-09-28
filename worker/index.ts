@@ -1436,6 +1436,11 @@ async function geocodeReportPlace(
   );
 
   const queries: Array<{ text: string; type?: string }> = [
+    // Search the literal place name first. Editorial report titles can contain
+    // extra descriptive wording that hurts geocoding accuracy.
+    ...nameCandidates.map((candidate) => ({
+      text: candidate,
+    })),
     ...nameCandidates.map((candidate) => ({
       text: [candidate, location, "France"]
         .filter(Boolean)
