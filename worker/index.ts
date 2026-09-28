@@ -1404,7 +1404,7 @@ function normalizePlaceText(value: string) {
 
 function placeTokens(value: string) {
   return normalizePlaceText(value)
-    .split(/\\s+/)
+    .split(/\s+/)
     .filter((token) => token.length >= 3);
 }
 
@@ -1425,8 +1425,8 @@ async function geocodeReportPlace(
     new Set(
       [
         name,
-        name.split(/\\s+(?:and|&)\\s+/i)[0]?.trim(),
-        name.split(/\\s+[-–—:]\\s+/)[0]?.trim(),
+        name.split(/\s+(?:and|&)\s+/i)[0]?.trim(),
+        name.split(/[[:space:]]+[-–—:][[:space:]]+/)[0]?.trim(),
       ].filter(
         (value): value is string =>
           typeof value === "string" &&
@@ -1500,18 +1500,6 @@ async function geocodeReportPlace(
           };
         }>;
       };
-
-      if (name.toLowerCase().includes("bassin bouvet")) {
-        console.error(
-          "[MAP DEBUG] geocoder query",
-          JSON.stringify({
-            name,
-            location,
-            query: query.text,
-            type: query.type || null,
-          }),
-        );
-      }
 
       let best:
         | {
@@ -1621,13 +1609,6 @@ async function geocodeReportPlace(
         }
       }
 
-      if (name.toLowerCase().includes("bassin bouvet")) {
-        console.error(
-          "[MAP DEBUG] selected result",
-          JSON.stringify(best),
-        );
-      }
-
       // A literal place-name match is the strongest signal. This is what
       // prevents an editorial title from resolving to a nearby city centroid.
       if (best?.exactName) {
@@ -1676,7 +1657,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 5;
+  const forceRegeocode = report.map_coordinates_version !== 6;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1714,7 +1695,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 5 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 6 : report.map_coordinates_version,
     places,
   };
 }
@@ -2666,7 +2647,10 @@ export default {
       try {
         const enrichedReport = await hydrateReportMapCoordinates(env, reportContent);
 
-        if (JSON.stringify(enrichedReport.places) !== JSON.stringify(reportContent.places)) {
+        if (
+      JSON.stringify(enrichedReport.places) !== JSON.stringify(reportContent.places) ||
+      enrichedReport.map_coordinates_version !== reportContent.map_coordinates_version
+    ) {
           reportContent = enrichedReport;
 
           await env.DB.prepare(`
