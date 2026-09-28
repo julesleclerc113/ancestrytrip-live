@@ -1417,17 +1417,30 @@ async function geocodeReportPlace(
 
   if (!apiKey || (!name && !location)) return null;
 
-  const targetNameTokens = placeTokens(name);
-  const targetLocationTokens = placeTokens(location);
+  // Report place names are sometimes editorial titles rather than the
+  // literal name used by the map data. For example:
+  // "Bassin Bouvet and the Historic Port Quays of Saint-Servan"
+  // should first be searched as "Bassin Bouvet".
+  const nameCandidates = Array.from(
+    new Set(
+      [
+        name,
+        name.split(/\\s+(?:and|&)\\s+/i)[0]?.trim(),
+        name.split(/\\s+[-–—:]\\s+/)[0]?.trim(),
+      ].filter(
+        (value): value is string =>
+          typeof value === "string" &&
+          value.length >= 3,
+      ),
+    ),
+  );
 
   const queries = [
-    {
-      text: [name, location, "France"].filter(Boolean).join(", "),
-      type: "amenity",
-    },
-    {
-      text: [name, location, "France"].filter(Boolean).join(", "),
-    },
+    ...nameCandidates.map((candidate) => ({
+      text: [candidate, location, "France"]
+        .filter(Boolean)
+        .join(", "),
+    })),
     {
       text: [location, "France"].filter(Boolean).join(", "),
       type: "city",
@@ -1470,17 +1483,37 @@ async function geocodeReportPlace(
           lon?: number;
           name?: string;
           formatted?: string;
+          address_line1?: string;
           city?: string;
           county?: string;
           state?: string;
           country?: string;
           categories?: string[];
+          result_type?: string;
+          rank?: {
+            confidence?: number;
+          };
         }>;
       };
 
       let best:
-        | { latitude: number; longitude: number; score: number }
+        | {
+            latitude: number;
+            longitude: number;
+            score: number;
+            exactName: boolean;
+          }
         | null = null;
+
+      const candidateName =
+        nameCandidates.find((candidate) =>
+          normalizePlaceText(query.text).startsWith(
+            normalizePlaceText(candidate),
+          ),
+        ) || name;
+
+      const candidateTokens = placeTokens(candidateName);
+      const locationTokens = placeTokens(location);
 
       for (const result of data.results || []) {
         const latitude = Number(result?.lat);
@@ -1497,9 +1530,16 @@ async function geocodeReportPlace(
           continue;
         }
 
+        const resultName = normalizePlaceText(
+          result.name ||
+            result.address_line1 ||
+            "",
+        );
+
         const resultText = normalizePlaceText(
           [
             result.name,
+            result.address_line1,
             result.formatted,
             result.city,
             result.county,
@@ -1511,43 +1551,68 @@ async function geocodeReportPlace(
 
         const resultTokens = new Set(placeTokens(resultText));
 
-        const nameMatches = targetNameTokens.filter((token) =>
+        const nameMatches = candidateTokens.filter((token) =>
           resultTokens.has(token),
         ).length;
 
-        const locationMatches = targetLocationTokens.filter((token) =>
+        const locationMatches = locationTokens.filter((token) =>
           resultTokens.has(token),
         ).length;
 
-        const nameCoverage = targetNameTokens.length
-          ? nameMatches / targetNameTokens.length
+        const nameCoverage = candidateTokens.length
+          ? nameMatches / candidateTokens.length
           : 0;
 
-        const locationCoverage = targetLocationTokens.length
-          ? locationMatches / targetLocationTokens.length
+        const locationCoverage = locationTokens.length
+          ? locationMatches / locationTokens.length
           : 0;
 
         const exactName =
-          name &&
-          normalizePlaceText(result.name || "") === normalizePlaceText(name);
+          candidateName &&
+          resultName === normalizePlaceText(candidateName);
+
+        const confidence = Number(result.rank?.confidence) || 0;
 
         const score =
-          (exactName ? 100 : 0) +
-          nameCoverage * 60 +
-          locationCoverage * 40 +
-          (result.categories?.some((category) =>
-            /building|church|historic|tourism|amenity|heritage/i.test(category),
-          )
+          (exactName ? 200 : 0) +
+          nameCoverage * 80 +
+          locationCoverage * 30 +
+          confidence * 20 +
+          (result.result_type === "amenity" ||
+          result.result_type === "building"
             ? 5
             : 0);
 
-        if (!best || score > best.score) {
-          best = { latitude, longitude, score };
+        if (
+          !best ||
+          score > best.score
+        ) {
+          best = {
+            latitude,
+            longitude,
+            score,
+            exactName: Boolean(exactName),
+          };
         }
       }
 
-      // Never store a weak match as if it were a precise place.
-      if (best && best.score >= 70) {
+      // A literal place-name match is the strongest signal. This is what
+      // prevents an editorial title from resolving to a nearby city centroid.
+      if (best?.exactName) {
+        return {
+          latitude: best.latitude,
+          longitude: best.longitude,
+        };
+      }
+
+      // Otherwise require both strong name and location agreement.
+      if (
+        name &&
+        best &&
+        candidateTokens.length > 0 &&
+        candidateTokens.length >= 2 &&
+        best.score >= 100
+      ) {
         return {
           latitude: best.latitude,
           longitude: best.longitude,
@@ -1579,7 +1644,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 3;
+  const forceRegeocode = report.map_coordinates_version !== 4;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1617,7 +1682,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 3 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 4 : report.map_coordinates_version,
     places,
   };
 }
