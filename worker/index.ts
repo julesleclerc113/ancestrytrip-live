@@ -69,6 +69,7 @@ interface ReportImage {
 
 interface HeritageReport {
   title: string;
+  map_coordinates_version?: number;
   introduction: string;
   family_connection: string;
   heritage_context: string;
@@ -678,6 +679,7 @@ function normalizeHeritageReport(
   });
 
   return {
+    map_coordinates_version: 2,
     title:
       source.report_metadata?.report_type ||
       source.title ||
@@ -1401,30 +1403,46 @@ async function geocodeReportPlace(
   if (!apiKey || (!name && !location)) return null;
 
   const queries = [
-    [name, location, "France"].filter(Boolean).join(", "),
-    [location, "France"].filter(Boolean).join(", "),
-  ].filter((query, index, all) => query && all.indexOf(query) === index);
+    {
+      text: [name, location, "France"].filter(Boolean).join(", "),
+      type: "amenity",
+    },
+    {
+      text: [name, location, "France"].filter(Boolean).join(", "),
+    },
+    {
+      text: [location, "France"].filter(Boolean).join(", "),
+      type: "city",
+    },
+  ];
 
   for (const query of queries) {
-    try {
-      const url =
-        "https://api.geoapify.com/v1/geocode/search?" +
-        new URLSearchParams({
-          text: query,
-          filter: "countrycode:fr",
-          limit: "1",
-          format: "json",
-          lang: "fr",
-          apiKey,
-        }).toString();
+    if (!query.text) continue;
 
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(5000),
+    try {
+      const params = new URLSearchParams({
+        text: query.text,
+        filter: "countrycode:fr",
+        limit: "3",
+        format: "json",
+        lang: "fr",
+        apiKey,
       });
+
+      if (query.type) {
+        params.set("type", query.type);
+      }
+
+      const response = await fetch(
+        "https://api.geoapify.com/v1/geocode/search?" + params.toString(),
+        {
+          headers: {
+            "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
 
       if (!response.ok) continue;
 
@@ -1435,22 +1453,23 @@ async function geocodeReportPlace(
         }>;
       };
 
-      const result = data.results?.[0];
-      const latitude = Number(result?.lat);
-      const longitude = Number(result?.lon);
+      for (const result of data.results || []) {
+        const latitude = Number(result?.lat);
+        const longitude = Number(result?.lon);
 
-      if (
-        Number.isFinite(latitude) &&
-        Number.isFinite(longitude) &&
-        latitude >= 41 &&
-        latitude <= 52 &&
-        longitude >= -6 &&
-        longitude <= 10
-      ) {
-        return { latitude, longitude };
+        if (
+          Number.isFinite(latitude) &&
+          Number.isFinite(longitude) &&
+          latitude >= 41 &&
+          latitude <= 52 &&
+          longitude >= -6 &&
+          longitude <= 10
+        ) {
+          return { latitude, longitude };
+        }
       }
     } catch {
-      // Try the simpler location query. Map enrichment is optional.
+      // Map enrichment is optional.
     }
   }
 
@@ -1462,31 +1481,53 @@ async function hydrateReportMapCoordinates(
   report: HeritageReport,
 ): Promise<HeritageReport> {
   const apiKey = env.GEOAPIFY_API_KEY?.trim();
+  const hasPlaces =
+    Array.isArray(report.places) &&
+    report.places.length > 0;
 
-  if (!apiKey || !Array.isArray(report.places) || report.places.length === 0) {
-    return report;
-  }
+  if (!hasPlaces) return report;
+
+  const forceRegeocode = report.map_coordinates_version !== 2;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
+      const mapQuery = [place.name, place.location]
+        .filter(Boolean)
+        .join(", ");
+
+      let enrichedPlace: ReportPlace = {
+        ...place,
+        map_url: place.map_url || (
+          mapQuery
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+            : undefined
+        ),
+      };
+
       if (
-        typeof place.latitude === "number" &&
-        Number.isFinite(place.latitude) &&
-        typeof place.longitude === "number" &&
-        Number.isFinite(place.longitude)
+        !apiKey ||
+        (!forceRegeocode &&
+          typeof enrichedPlace.latitude === "number" &&
+          Number.isFinite(enrichedPlace.latitude) &&
+          typeof enrichedPlace.longitude === "number" &&
+          Number.isFinite(enrichedPlace.longitude))
       ) {
-        return place;
+        return enrichedPlace;
       }
 
-      const coordinates = await geocodeReportPlace(apiKey, place);
+      const coordinates = await geocodeReportPlace(apiKey, enrichedPlace);
 
       return coordinates
-        ? { ...place, ...coordinates }
-        : place;
+        ? { ...enrichedPlace, ...coordinates }
+        : enrichedPlace;
     }),
   );
 
-  return { ...report, places };
+  return {
+    ...report,
+    map_coordinates_version: apiKey ? 2 : report.map_coordinates_version,
+    places,
+  };
 }
 
 async function verifyStripeWebhookSignature(
