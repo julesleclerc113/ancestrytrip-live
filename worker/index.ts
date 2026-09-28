@@ -1649,7 +1649,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 4;
+  const forceRegeocode = report.map_coordinates_version !== 5;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1687,7 +1687,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 4 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 5 : report.map_coordinates_version,
     places,
   };
 }
