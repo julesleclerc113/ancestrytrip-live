@@ -1393,6 +1393,21 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
   };
 }
 
+function normalizePlaceText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function placeTokens(value: string) {
+  return normalizePlaceText(value)
+    .split(/\\s+/)
+    .filter((token) => token.length >= 3);
+}
+
 async function geocodeReportPlace(
   apiKey: string,
   place: ReportPlace,
@@ -1401,6 +1416,9 @@ async function geocodeReportPlace(
   const location = place.location?.trim() || "";
 
   if (!apiKey || (!name && !location)) return null;
+
+  const targetNameTokens = placeTokens(name);
+  const targetLocationTokens = placeTokens(location);
 
   const queries = [
     {
@@ -1423,7 +1441,7 @@ async function geocodeReportPlace(
       const params = new URLSearchParams({
         text: query.text,
         filter: "countrycode:fr",
-        limit: "3",
+        limit: "10",
         format: "json",
         lang: "fr",
         apiKey,
@@ -1450,23 +1468,98 @@ async function geocodeReportPlace(
         results?: Array<{
           lat?: number;
           lon?: number;
+          name?: string;
+          formatted?: string;
+          city?: string;
+          county?: string;
+          state?: string;
+          country?: string;
+          categories?: string[];
         }>;
       };
+
+      let best:
+        | { latitude: number; longitude: number; score: number }
+        | null = null;
 
       for (const result of data.results || []) {
         const latitude = Number(result?.lat);
         const longitude = Number(result?.lon);
 
         if (
-          Number.isFinite(latitude) &&
-          Number.isFinite(longitude) &&
-          latitude >= 41 &&
-          latitude <= 52 &&
-          longitude >= -6 &&
-          longitude <= 10
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude) ||
+          latitude < 41 ||
+          latitude > 52 ||
+          longitude < -6 ||
+          longitude > 10
         ) {
-          return { latitude, longitude };
+          continue;
         }
+
+        const resultText = normalizePlaceText(
+          [
+            result.name,
+            result.formatted,
+            result.city,
+            result.county,
+            result.state,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+
+        const resultTokens = new Set(placeTokens(resultText));
+
+        const nameMatches = targetNameTokens.filter((token) =>
+          resultTokens.has(token),
+        ).length;
+
+        const locationMatches = targetLocationTokens.filter((token) =>
+          resultTokens.has(token),
+        ).length;
+
+        const nameCoverage = targetNameTokens.length
+          ? nameMatches / targetNameTokens.length
+          : 0;
+
+        const locationCoverage = targetLocationTokens.length
+          ? locationMatches / targetLocationTokens.length
+          : 0;
+
+        const exactName =
+          name &&
+          normalizePlaceText(result.name || "") === normalizePlaceText(name);
+
+        const score =
+          (exactName ? 100 : 0) +
+          nameCoverage * 60 +
+          locationCoverage * 40 +
+          (result.categories?.some((category) =>
+            /building|church|historic|tourism|amenity|heritage/i.test(category),
+          )
+            ? 5
+            : 0);
+
+        if (!best || score > best.score) {
+          best = { latitude, longitude, score };
+        }
+      }
+
+      // Never store a weak match as if it were a precise place.
+      if (best && best.score >= 70) {
+        return {
+          latitude: best.latitude,
+          longitude: best.longitude,
+        };
+      }
+
+      // If the place name is absent, a city/location match is sufficient.
+      if (!name && best && best.score >= 40) {
+        return {
+          latitude: best.latitude,
+          longitude: best.longitude,
+        };
       }
     } catch {
       // Map enrichment is optional.
@@ -1475,7 +1568,6 @@ async function geocodeReportPlace(
 
   return null;
 }
-
 async function hydrateReportMapCoordinates(
   env: Env,
   report: HeritageReport,
@@ -1487,7 +1579,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 2;
+  const forceRegeocode = report.map_coordinates_version !== 3;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1525,7 +1617,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 2 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 3 : report.map_coordinates_version,
     places,
   };
 }
