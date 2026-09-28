@@ -1435,7 +1435,7 @@ async function geocodeReportPlace(
     ),
   );
 
-  const queries = [
+  const queries: Array<{ text: string; type?: string }> = [
     ...nameCandidates.map((candidate) => ({
       text: [candidate, location, "France"]
         .filter(Boolean)
