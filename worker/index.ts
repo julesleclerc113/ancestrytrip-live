@@ -1501,12 +1501,28 @@ async function geocodeReportPlace(
         }>;
       };
 
+      if (name.toLowerCase().includes("bassin bouvet")) {
+        console.error(
+          "[MAP DEBUG] geocoder query",
+          JSON.stringify({
+            name,
+            location,
+            query: query.text,
+            type: query.type || null,
+          }),
+        );
+      }
+
       let best:
         | {
             latitude: number;
             longitude: number;
             score: number;
             exactName: boolean;
+            resultName: string;
+            formatted: string;
+            resultType: string;
+            confidence: number;
           }
         | null = null;
 
@@ -1597,8 +1613,19 @@ async function geocodeReportPlace(
             longitude,
             score,
             exactName: Boolean(exactName),
+            resultName: result.name || result.address_line1 || "",
+            formatted: result.formatted || "",
+            resultType: result.result_type || "",
+            confidence,
           };
         }
+      }
+
+      if (name.toLowerCase().includes("bassin bouvet")) {
+        console.error(
+          "[MAP DEBUG] selected result",
+          JSON.stringify(best),
+        );
       }
 
       // A literal place-name match is the strongest signal. This is what
