@@ -1336,8 +1336,8 @@ Do not use markdown fences.
     validSources.values(),
   );
 
-  const reportWithImages = await hydrateReportImages(report);
-  return await hydrateReportMapCoordinates(env, reportWithImages);
+  const reportWithCoordinates = await hydrateReportMapCoordinates(env, report);
+  return await hydrateReportImages(reportWithCoordinates);
 }
 
 
@@ -1478,6 +1478,97 @@ async function findFallbackPlaceImage(
   const minimumBytes = options.minimumBytes ?? 100000;
   const minimumWidth = options.minimumWidth ?? 800;
   const minimumHeight = options.minimumHeight ?? 500;
+
+  // If the place already has coordinates, ask Wikimedia Commons for nearby
+  // photographs before falling back to text search. This is useful for small
+  // stations, churches, cemeteries and landmarks whose file names vary.
+  if (
+    typeof place.latitude === "number" &&
+    Number.isFinite(place.latitude) &&
+    typeof place.longitude === "number" &&
+    Number.isFinite(place.longitude)
+  ) {
+    try {
+      const params = new URLSearchParams({
+        action: "query",
+        generator: "geosearch",
+        ggsprimary: "all",
+        ggsnamespace: "6",
+        ggscoord: `${place.latitude}|${place.longitude}`,
+        ggsradius: "5000",
+        ggslimit: "30",
+        prop: "imageinfo",
+        iiprop: "url|size|mime",
+        format: "json",
+        origin: "*",
+      });
+
+      const response = await fetch(
+        "https://commons.wikimedia.org/w/api.php?" + params.toString(),
+        {
+          headers: {
+            "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          query?: {
+            pages?: Record<string, {
+              title?: string;
+              imageinfo?: Array<{
+                url?: string;
+                width?: number;
+                height?: number;
+              }>;
+            }>;
+          };
+        };
+
+        const nameTokens = new Set(placeTokens(name));
+        const locationTokens = new Set(placeTokens(location));
+
+        const candidates = Object.values(data.query?.pages || {})
+          .flatMap((page) => {
+            const info = page.imageinfo?.[0];
+            if (!info?.url) return [];
+
+            const title = (page.title || "").replace(/^File:/i, "");
+            const tokens = placeTokens(title);
+            const nameMatches = tokens.filter((token) => nameTokens.has(token)).length;
+            const locationMatches = tokens.filter((token) => locationTokens.has(token)).length;
+
+            return [{
+              url: info.url,
+              score:
+                nameMatches * 80 +
+                locationMatches * 35 +
+                Math.min((Number(info.width) || 0) / 30, 80),
+            }];
+          })
+          .filter((candidate) =>
+            /^https?:\/\//i.test(candidate.url) &&
+            !usedImageUrls.has(candidate.url),
+          )
+          .sort((a, b) => b.score - a.score);
+
+        for (const candidate of candidates.slice(0, 10)) {
+          if (await isUsableImageUrl(candidate.url, {
+            minimumBytes,
+            minimumWidth,
+            minimumHeight,
+          })) {
+            return candidate.url;
+          }
+        }
+      }
+    } catch {
+      // Continue with category and text search.
+    }
+  }
 
   // Prefer exact Wikimedia Commons categories for named places. These categories
   // are especially reliable for landmarks and transport sites.
