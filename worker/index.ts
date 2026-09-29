@@ -1509,7 +1509,7 @@ async function findFallbackPlaceImage(
             ? [{ url: info.url, width: Number(info.width) || 0 }]
             : [];
         })
-        .filter((candidate) => /^https?:\\/\\//i.test(candidate.url) && !usedImageUrls.has(candidate.url))
+        .filter((candidate) => /^https?:\/\//i.test(candidate.url) && !usedImageUrls.has(candidate.url))
         .sort((a, b) => b.width - a.width);
 
       for (const candidate of candidates.slice(0, 8)) {
