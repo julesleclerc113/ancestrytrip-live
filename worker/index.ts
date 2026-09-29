@@ -1328,7 +1328,6 @@ async function isUsableImageUrl(
         offset += 2 + length;
       }
     } else if (type.includes("webp") && bytes.length >= 30) {
-      const view = new DataView(bytes.buffer);
       const fourcc = String.fromCharCode(
         bytes[12], bytes[13], bytes[14], bytes[15],
       );
