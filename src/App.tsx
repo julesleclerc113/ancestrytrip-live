@@ -29,6 +29,7 @@ interface ReportPlace {
   category?: string;
   research_role?: string;
   image_url?: string;
+  image_fallback_url?: string;
   map_url?: string;
   latitude?: number;
   longitude?: number;
@@ -39,6 +40,27 @@ interface ReportImage {
   url: string;
   title: string;
   source_url: string;
+}
+
+interface ReportHistoricalComparison {
+  place_name: string;
+  location: string;
+  historical_period: string;
+  historical_description: string;
+  current_description: string;
+  historical_image_url?: string;
+  historical_image_source_url?: string;
+  current_image_url?: string;
+  current_image_source_url?: string;
+}
+
+interface ReportTradition {
+  name: string;
+  period: string;
+  description: string;
+  place: string;
+  evidence: string;
+  source_url?: string;
 }
 
 interface ReportItineraryDay {
@@ -71,6 +93,8 @@ interface HeritageReport {
   caveats: string[];
   sources: ReportSource[];
   images?: ReportImage[];
+  historical_comparisons?: ReportHistoricalComparison[];
+  traditions?: ReportTradition[];
   image_hydration_version?: number;
 }
 
@@ -101,6 +125,8 @@ function ReportExperience({
   const itinerary = report.itinerary || [];
   const leads = report.research_leads || [];
   const images = report.images || [];
+  const historicalComparisons = report.historical_comparisons || [];
+  const traditions = report.traditions || [];
   const [selectedPlaceIndex, setSelectedPlaceIndex] = useState(0);
   const selectedPlace = places[selectedPlaceIndex] || places[0];
 
@@ -315,22 +341,39 @@ function ReportExperience({
                 <span className="journey-location">{place.location}</span>
                 {place.category && <span className="journey-category">{place.category}</span>}
               </div>
-              {placeImage(place) ? (
-                <img
-                  src={placeImage(place)}
-                  alt={place.name}
-                  loading="lazy"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                    const placeholder = event.currentTarget.nextElementSibling;
-                    if (placeholder instanceof HTMLElement) placeholder.style.display = "grid";
-                  }}
-                />
-              ) : (
-                <div className="journey-image-placeholder" aria-hidden="true">
+              <div className="journey-image-frame">
+                {placeImage(place) ? (
+                  <img
+                    src={placeImage(place)}
+                    alt={place.name}
+                    loading="lazy"
+                    onError={(event) => {
+                      const fallbackUrl = place.image_fallback_url;
+                      if (
+                        fallbackUrl &&
+                        event.currentTarget.src !== fallbackUrl
+                      ) {
+                        event.currentTarget.src = fallbackUrl;
+                        return;
+                      }
+                      event.currentTarget.style.display = "none";
+                      const fallback = event.currentTarget.parentElement?.querySelector(
+                        ".journey-image-placeholder",
+                      );
+                      if (fallback instanceof HTMLElement) {
+                        fallback.style.display = "grid";
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="journey-image-placeholder"
+                  aria-hidden={!!placeImage(place)}
+                  style={{ display: placeImage(place) ? "none" : "grid" }}
+                >
                   <span>{place.name}</span>
                 </div>
-              )}
+              </div>
               <div className="journey-card-body">
                 <h3>{place.name}</h3>
                 <p className="journey-role">{place.research_role || "Research location"}</p>
@@ -350,7 +393,7 @@ function ReportExperience({
       {(() => {
         const placeGallery = places
           .filter((place) => !!place.image_url)
-          .slice(0, 4)
+          .slice(0, 6)
           .map((place) => ({
             url: place.image_url as string,
             title: place.name,
@@ -384,6 +427,77 @@ function ReportExperience({
           </section>
         );
       })()}
+
+      {historicalComparisons.length > 0 && (
+        <section className="report-section report-then-now">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">THEN & NOW</div>
+              <h2>See what changed — and what survived.</h2>
+            </div>
+            <span className="report-section-count">{historicalComparisons.length} comparisons</span>
+          </div>
+          <div className="then-now-grid">
+            {historicalComparisons.map((comparison, index) => (
+              <article className="then-now-card" key={comparison.place_name + index}>
+                <div className="then-now-heading">
+                  <span>{comparison.place_name}</span>
+                  <small>{comparison.location} · {comparison.historical_period}</small>
+                </div>
+                <div className="then-now-images">
+                  <figure>
+                    {comparison.historical_image_url ? (
+                      <img src={comparison.historical_image_url} alt={"Historical view of " + comparison.place_name} loading="lazy" />
+                    ) : (
+                      <div className="then-now-image-placeholder">Historical visual unavailable</div>
+                    )}
+                    <figcaption>THEN</figcaption>
+                  </figure>
+                  <figure>
+                    {comparison.current_image_url ? (
+                      <img src={comparison.current_image_url} alt={"Current view of " + comparison.place_name} loading="lazy" />
+                    ) : (
+                      <div className="then-now-image-placeholder">Current visual unavailable</div>
+                    )}
+                    <figcaption>TODAY</figcaption>
+                  </figure>
+                </div>
+                <div className="then-now-copy">
+                  <p><strong>Then:</strong> {comparison.historical_description}</p>
+                  <p><strong>Today:</strong> {comparison.current_description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {traditions.length > 0 && (
+        <section className="report-section report-traditions">
+          <div className="report-section-head">
+            <div>
+              <div className="report-kicker">LIFE & TRADITIONS</div>
+              <h2>How people lived here.</h2>
+            </div>
+            <span className="report-section-count">{traditions.length} documented traditions</span>
+          </div>
+          <div className="traditions-grid">
+            {traditions.map((tradition, index) => (
+              <article className="tradition-card" key={tradition.name + index}>
+                <span className="tradition-number">{String(index + 1).padStart(2, "0")}</span>
+                <h3>{tradition.name}</h3>
+                <div className="tradition-period">{tradition.period}</div>
+                <p>{tradition.description}</p>
+                <p className="tradition-place"><strong>Where:</strong> {tradition.place}</p>
+                <div className="tradition-evidence">
+                  <span>HISTORICAL EVIDENCE</span>
+                  <p>{tradition.evidence}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {itinerary.length > 0 && (
         <section className="report-section report-itinerary-modern">
