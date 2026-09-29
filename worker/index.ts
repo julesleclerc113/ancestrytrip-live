@@ -1014,9 +1014,13 @@ FIELD RULES
 - "images" must be an array containing 2-4 representative images whenever the research pages expose usable images; do not leave it empty merely because the page is not itself an image file.
 - Actively look for visual material while researching: official archive photographs, museum collections, heritage pages, municipal history pages, historic maps, churches, cemeteries, streets, ports, stations and landscapes that are directly relevant to the report.
 - Never invent an image URL. Only use a direct image URL actually present on a consulted webpage, such as an og:image, twitter:image, gallery image or image asset linked from that page, and pair it with the exact webpage URL in "source_url".
-- Prefer 2-4 representative place images from official archive, museum, heritage, municipal, library or established institutional pages.
+- Provide a distinct image for every place in the "places" list whenever a real image can be found.
+- Each place image must visibly represent that exact named location, not merely the town, region, coastline or a generic category.
+- Prefer high-resolution images from official archive, museum, heritage, municipal, library, tourism or established institutional pages. Avoid thumbnails, tiny preview images, map tiles, logos and generic stock photography.
+- The image should be suitable for a large web card: prefer at least roughly 1000px wide and a source image that is not visibly compressed or pixelated.
 - If a real image clearly depicts a specific place in the "places" list, include the direct image URL as "image_url" on that place as well as including the webpage in "source_url". Never guess an image URL.
-- Do not substitute generic stock photography when a research-specific image is unavailable.
+- Do not reuse the same image URL for two different places.
+- If no suitable image exists for a particular place, omit the image rather than using an unrelated or generic photograph.
 - Keep image URLs separate from "sources"; sources remain normal webpages.
 - Each source must contain exactly "title" and "url".
 - Use real URLs from the research results.
@@ -1273,7 +1277,10 @@ Do not use markdown fences.
 }
 
 
-async function isUsableImageUrl(url: string, minimumBytes = 90000) {
+async function isUsableImageUrl(
+  url: string,
+  options: { minimumBytes?: number; minimumWidth?: number; minimumHeight?: number } = {},
+) {
   try {
     const response = await fetch(url, {
       headers: {
@@ -1287,9 +1294,56 @@ async function isUsableImageUrl(url: string, minimumBytes = 90000) {
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.toLowerCase().startsWith("image/")) return false;
 
+    const minimumBytes = options.minimumBytes ?? 120000;
+    const minimumWidth = options.minimumWidth ?? 900;
+    const minimumHeight = options.minimumHeight ?? 600;
     const contentLength = Number(response.headers.get("content-length") || 0);
     if (contentLength > 0 && contentLength < minimumBytes) return false;
 
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength < minimumBytes) return false;
+
+    let width = 0;
+    let height = 0;
+    const type = contentType.toLowerCase();
+
+    if (type.includes("png") && bytes.length >= 24) {
+      width = new DataView(bytes.buffer).getUint32(16);
+      height = new DataView(bytes.buffer).getUint32(20);
+    } else if (type.includes("jpeg") || type.includes("jpg")) {
+      let offset = 2;
+      while (offset + 9 < bytes.length) {
+        if (bytes[offset] !== 0xff) break;
+        const marker = bytes[offset + 1];
+        const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+        if (
+          marker >= 0xc0 &&
+          marker <= 0xc3 &&
+          length >= 7
+        ) {
+          height = (bytes[offset + 5] << 8) | bytes[offset + 6];
+          width = (bytes[offset + 7] << 8) | bytes[offset + 8];
+          break;
+        }
+        offset += 2 + length;
+      }
+    } else if (type.includes("webp") && bytes.length >= 30) {
+      const view = new DataView(bytes.buffer);
+      const fourcc = String.fromCharCode(
+        bytes[12], bytes[13], bytes[14], bytes[15],
+      );
+      if (fourcc === "VP8X" && bytes.length >= 30) {
+        width = 1 + bytes[24] + (bytes[25] << 8) + (bytes[26] << 16);
+        height = 1 + bytes[27] + (bytes[28] << 8) + (bytes[29] << 16);
+      }
+    }
+
+    if (width > 0 && height > 0) {
+      return width >= minimumWidth && height >= minimumHeight;
+    }
+
+    // Some CDNs do not expose a parseable image format. Byte size is still
+    // a useful minimum safeguard in that case.
     return true;
   } catch {
     return false;
@@ -1354,7 +1408,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       continue;
     }
 
-    if (!(await isUsableImageUrl(image.url, 120000))) continue;
+    if (!(await isUsableImageUrl(image.url, { minimumBytes: 250000, minimumWidth: 1400, minimumHeight: 800 }))) continue;
     if (seenImageUrls.has(image.url.trim())) continue;
 
     seenImageUrls.add(image.url.trim());
@@ -1391,7 +1445,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       place.image_url &&
       /^https?:\/\//i.test(place.image_url) &&
       !usedPlaceImages.has(place.image_url) &&
-      await isUsableImageUrl(place.image_url, 90000)
+      await isUsableImageUrl(place.image_url, { minimumBytes: 140000, minimumWidth: 1000, minimumHeight: 650 })
     ) {
       usedPlaceImages.add(place.image_url);
       places.push(place);
