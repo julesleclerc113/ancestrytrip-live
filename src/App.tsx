@@ -61,6 +61,10 @@ interface ReportTradition {
   place: string;
   evidence: string;
   source_url?: string;
+  image_url?: string;
+  image_source_url?: string;
+  video_url?: string;
+  video_source_url?: string;
 }
 
 interface ReportItineraryDay {
@@ -438,36 +442,74 @@ function ReportExperience({
             <span className="report-section-count">{historicalComparisons.length} comparisons</span>
           </div>
           <div className="then-now-grid">
-            {historicalComparisons.map((comparison, index) => (
-              <article className="then-now-card" key={comparison.place_name + index}>
-                <div className="then-now-heading">
-                  <span>{comparison.place_name}</span>
-                  <small>{comparison.location} · {comparison.historical_period}</small>
-                </div>
-                <div className="then-now-images">
-                  <figure>
-                    {comparison.historical_image_url ? (
-                      <img src={comparison.historical_image_url} alt={"Historical view of " + comparison.place_name} loading="lazy" />
-                    ) : (
-                      <div className="then-now-image-placeholder">Historical visual unavailable</div>
-                    )}
-                    <figcaption>THEN</figcaption>
-                  </figure>
-                  <figure>
-                    {comparison.current_image_url ? (
-                      <img src={comparison.current_image_url} alt={"Current view of " + comparison.place_name} loading="lazy" />
-                    ) : (
-                      <div className="then-now-image-placeholder">Current visual unavailable</div>
-                    )}
-                    <figcaption>TODAY</figcaption>
-                  </figure>
-                </div>
-                <div className="then-now-copy">
-                  <p><strong>Then:</strong> {comparison.historical_description}</p>
-                  <p><strong>Today:</strong> {comparison.current_description}</p>
-                </div>
-              </article>
-            ))}
+            {historicalComparisons.map((comparison, index) => {
+              const comparisonPlace = places.find((place) => {
+                const placeName = place.name.toLowerCase();
+                const comparisonName = comparison.place_name.toLowerCase();
+                return (
+                  placeName === comparisonName ||
+                  placeName.includes(comparisonName) ||
+                  comparisonName.includes(placeName)
+                );
+              });
+
+              return (
+                <article className="then-now-card" key={comparison.place_name + index}>
+                  <div className="then-now-heading">
+                    <span>{comparison.place_name}</span>
+                    <small>{comparison.location} · {comparison.historical_period}</small>
+                  </div>
+                  <div className="then-now-images">
+                    <figure>
+                      {comparison.historical_image_url ? (
+                        <img
+                          src={comparison.historical_image_url}
+                          alt={"Historical view of " + comparison.place_name}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="then-now-image-placeholder">Historical visual unavailable</div>
+                      )}
+                      <figcaption>THEN</figcaption>
+                    </figure>
+                    <figure>
+                      {comparison.current_image_url ? (
+                        <img
+                          src={comparison.current_image_url}
+                          alt={"Current view of " + comparison.place_name}
+                          loading="lazy"
+                          onError={(event) => {
+                            const fallbackUrl = comparisonPlace?.image_fallback_url;
+                            if (
+                              fallbackUrl &&
+                              event.currentTarget.src !== fallbackUrl
+                            ) {
+                              event.currentTarget.src = fallbackUrl;
+                              return;
+                            }
+                            event.currentTarget.style.display = "none";
+                            const fallback = event.currentTarget.parentElement?.querySelector(
+                              ".then-now-image-placeholder",
+                            );
+                            if (fallback instanceof HTMLElement) {
+                              fallback.textContent = "Current visual unavailable";
+                              fallback.style.display = "grid";
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="then-now-image-placeholder">Current visual unavailable</div>
+                      )}
+                      <figcaption>TODAY</figcaption>
+                    </figure>
+                  </div>
+                  <div className="then-now-copy">
+                    <p><strong>Then:</strong> {comparison.historical_description}</p>
+                    <p><strong>Today:</strong> {comparison.current_description}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
@@ -485,6 +527,22 @@ function ReportExperience({
             {traditions.map((tradition, index) => (
               <article className="tradition-card" key={tradition.name + index}>
                 <span className="tradition-number">{String(index + 1).padStart(2, "0")}</span>
+                {tradition.image_url && (
+                  <img
+                    className="tradition-media-image"
+                    src={tradition.image_url}
+                    alt={tradition.name}
+                    loading="lazy"
+                  />
+                )}
+                {tradition.video_url && (
+                  <video
+                    className="tradition-media-video"
+                    src={tradition.video_url}
+                    controls
+                    preload="metadata"
+                  />
+                )}
                 <h3>{tradition.name}</h3>
                 <div className="tradition-period">{tradition.period}</div>
                 <p>{tradition.description}</p>
