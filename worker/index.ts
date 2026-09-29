@@ -1273,7 +1273,7 @@ Do not use markdown fences.
 }
 
 
-async function isUsableImageUrl(url: string) {
+async function isUsableImageUrl(url: string, minimumBytes = 90000) {
   try {
     const response = await fetch(url, {
       headers: {
@@ -1285,7 +1285,12 @@ async function isUsableImageUrl(url: string) {
     if (!response.ok) return false;
 
     const contentType = response.headers.get("content-type") || "";
-    return contentType.toLowerCase().startsWith("image/");
+    if (!contentType.toLowerCase().startsWith("image/")) return false;
+
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > 0 && contentLength < minimumBytes) return false;
+
+    return true;
   } catch {
     return false;
   }
@@ -1334,6 +1339,7 @@ async function extractOgImage(source: ReportSource) {
 
 async function hydrateReportImages(report: HeritageReport): Promise<HeritageReport> {
   const images: ReportImage[] = [];
+  const seenImageUrls = new Set<string>();
 
   for (const image of Array.isArray(report.images) ? report.images : []) {
     if (images.length >= 4) break;
@@ -1348,8 +1354,10 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       continue;
     }
 
-    if (!(await isUsableImageUrl(image.url))) continue;
+    if (!(await isUsableImageUrl(image.url, 120000))) continue;
+    if (seenImageUrls.has(image.url.trim())) continue;
 
+    seenImageUrls.add(image.url.trim());
     images.push({
       url: image.url.trim(),
       title: image.title.trim(),
@@ -1363,10 +1371,11 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     if (images.length >= 4) break;
 
     const imageUrl = await extractOgImage(source);
-    if (!imageUrl || images.some((image) => image.url === imageUrl)) {
+    if (!imageUrl || seenImageUrls.has(imageUrl)) {
       continue;
     }
 
+    seenImageUrls.add(imageUrl);
     images.push({
       url: imageUrl,
       title: source.title,
@@ -1374,20 +1383,23 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     });
   }
 
-  const places = await Promise.all(
-    (report.places || []).map(async (place) => {
-      if (
-        !place.image_url ||
-        !/^https?:\/\//i.test(place.image_url) ||
-        !(await isUsableImageUrl(place.image_url))
-      ) {
-        const { image_url: _discarded, ...withoutImage } = place;
-        return withoutImage;
-      }
+  const places: ReportPlace[] = [];
+  const usedPlaceImages = new Set<string>();
 
-      return place;
-    }),
-  );
+  for (const place of report.places || []) {
+    if (
+      place.image_url &&
+      /^https?:\/\//i.test(place.image_url) &&
+      !usedPlaceImages.has(place.image_url) &&
+      await isUsableImageUrl(place.image_url, 90000)
+    ) {
+      usedPlaceImages.add(place.image_url);
+      places.push(place);
+    } else {
+      const { image_url: _discarded, ...withoutImage } = place;
+      places.push(withoutImage);
+    }
+  }
 
   return {
     ...report,
@@ -1400,7 +1412,7 @@ function normalizePlaceText(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
@@ -1441,6 +1453,7 @@ async function geocodeReportPlace(
   // Resolve the report locality globally first. This gives us the
   // country code without assuming the report is European or French.
   let countryCode = "";
+  let locationFallback: { latitude: number; longitude: number } | null = null;
 
   if (location) {
     try {
@@ -1470,6 +1483,8 @@ async function geocodeReportPlace(
           results?: Array<{
             city?: string;
             country_code?: string;
+            lat?: number;
+            lon?: number;
             formatted?: string;
           }>;
         };
@@ -1488,6 +1503,12 @@ async function geocodeReportPlace(
         });
 
         countryCode = locationResult?.country_code?.toLowerCase() || "";
+        if (locationResult) {
+          locationFallback = {
+            latitude: Number(locationResult.lat),
+            longitude: Number(locationResult.lon),
+          };
+        }
       }
     } catch {
       // Continue with an unrestricted worldwide search if country resolution
@@ -1611,10 +1632,10 @@ async function geocodeReportPlace(
         if (
           !Number.isFinite(latitude) ||
           !Number.isFinite(longitude) ||
-          latitude < 41 ||
-          latitude > 52 ||
-          longitude < -6 ||
-          longitude > 10
+          latitude < -90 ||
+          latitude > 90 ||
+          longitude < -180 ||
+          longitude > 180
         ) {
           continue;
         }
@@ -1735,7 +1756,7 @@ async function geocodeReportPlace(
     }
   }
 
-  return null;
+  return locationFallback;
 }
 async function hydrateReportMapCoordinates(
   env: Env,
@@ -1748,7 +1769,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 8;
+  const forceRegeocode = report.map_coordinates_version !== 9;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
