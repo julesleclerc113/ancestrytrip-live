@@ -1525,16 +1525,22 @@ async function geocodeReportPlace(
         ) || name;
 
       const candidateTokens = placeTokens(candidateName);
-      // Country is already constrained by Geoapify's filter, so it must not
-      // count as evidence that the result is in the requested locality.
-      const locationTokens = placeTokens(location).filter(
-        (token) =>
-          ![
-            "france",
-            "francais",
-            "francaise",
-          ].includes(token),
-      );
+      // Country is already constrained by Geoapify's filter. For locality
+      // validation, use complete comma-separated phrases rather than isolated
+      // words, so "Saint" cannot falsely match an unrelated "Saint-Vincent".
+      const locationPhrases = location
+        .split(",")
+        .map((part) => normalizePlaceText(part))
+        .filter(
+          (part) =>
+            part.length >= 3 &&
+            ![
+              "france",
+              "francais",
+              "francaise",
+            ].includes(part) &&
+            !/^\d+(?:\s*\d+)?$/.test(part),
+        );
 
       for (const result of data.results || []) {
         const latitude = Number(result?.lat);
@@ -1576,16 +1582,17 @@ async function geocodeReportPlace(
           resultTokens.has(token),
         ).length;
 
-        const locationMatches = locationTokens.filter((token) =>
-          resultTokens.has(token),
+        const locationMatches = locationPhrases.filter(
+          (phrase) =>
+            resultText.includes(phrase),
         ).length;
 
         const nameCoverage = candidateTokens.length
           ? nameMatches / candidateTokens.length
           : 0;
 
-        const locationCoverage = locationTokens.length
-          ? locationMatches / locationTokens.length
+        const locationCoverage = locationPhrases.length
+          ? locationMatches / locationPhrases.length
           : 0;
 
         const exactName =
@@ -1626,7 +1633,7 @@ async function geocodeReportPlace(
       // "Cathédrale Saint-Vincent" can exist in multiple French cities.
       // When a locality was supplied, at least one meaningful locality token
       // must also be present in the geocoder result.
-      const hasLocationContext = locationTokens.length > 0;
+      const hasLocationContext = locationPhrases.length > 0;
       const exactNameMatchesLocation =
         best?.exactName &&
         (!hasLocationContext ||
