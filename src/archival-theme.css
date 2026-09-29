@@ -1529,12 +1529,11 @@
   text-align: center;
 }
 
-/* The pin is rotated to create the map-pin silhouette. Offset the card in the
-   pin's local coordinate system so its visual arrow stays anchored to the marker. */
+/* Research labels stay horizontal. Their connector points back to the marker. */
 .site-shell.success-page .research-map-tooltip {
   position: absolute;
-  left: calc(50% + 24px);
-  bottom: calc(100% + 7px);
+  left: 50%;
+  bottom: calc(100% + 14px);
   width: min(260px, 42vw);
   padding: 15px 17px;
   display: grid;
@@ -1554,13 +1553,13 @@
 }
 
 
-/* Marker 1 sits close to the left edge: place its card to the right/below and
-   put the connector on the card's left edge so it points back toward the marker. */
+/* Marker 1 is near the left edge: put its label to the right of the marker,
+   with the connector arrow centred on the marker. */
 .site-shell.success-page .research-map-pin:first-child .research-map-tooltip {
-  top: calc(100% + 28px);
+  top: 50%;
   bottom: auto;
-  left: calc(50% + 92px);
-  transform: translate(-50%, -8px);
+  left: calc(100% + 14px);
+  transform: translateY(-50%);
 }
 
 .site-shell.success-page .research-map-pin:first-child .research-map-tooltip::after {
@@ -1619,7 +1618,12 @@
 .site-shell.success-page .research-map-pin:focus-visible .research-map-tooltip {
   opacity: 1;
   visibility: visible;
-  transform: translate(-50%, 0) rotate(45deg);
+  transform: translate(-50%, 0);
+}
+
+.site-shell.success-page .research-map-pin:first-child:hover .research-map-tooltip,
+.site-shell.success-page .research-map-pin:first-child:focus-visible .research-map-tooltip {
+  transform: translateY(-50%);
 }
 
 .site-shell.success-page .journey-card {
