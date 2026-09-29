@@ -1425,7 +1425,15 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     if (images.length >= 4) break;
 
     const imageUrl = await extractOgImage(source);
-    if (!imageUrl || seenImageUrls.has(imageUrl)) {
+    if (
+      !imageUrl ||
+      seenImageUrls.has(imageUrl) ||
+      !(await isUsableImageUrl(imageUrl, {
+        minimumBytes: 250000,
+        minimumWidth: 1400,
+        minimumHeight: 800,
+      }))
+    ) {
       continue;
     }
 
