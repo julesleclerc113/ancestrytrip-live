@@ -81,6 +81,7 @@ interface HeritageReport {
   caveats: string[];
   sources: ReportSource[];
   images?: ReportImage[];
+  image_hydration_version?: number;
 }
 
 const PRODUCTS = {
@@ -1408,6 +1409,68 @@ async function findFallbackPlaceImage(
     ),
   );
 
+  // Prefer exact Wikimedia Commons categories for named places. These categories
+  // are especially reliable for landmarks and transport sites.
+  for (const categoryName of [name]) {
+    try {
+      const params = new URLSearchParams({
+        action: "query",
+        generator: "categorymembers",
+        gcmtitle: "Category:" + categoryName,
+        gcmnamespace: "6",
+        gcmtype: "file",
+        gcmlimit: "20",
+        prop: "imageinfo",
+        iiprop: "url|size|mime",
+        format: "json",
+        origin: "*",
+      });
+
+      const response = await fetch(
+        "https://commons.wikimedia.org/w/api.php?" + params.toString(),
+        {
+          headers: {
+            "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (!response.ok) continue;
+
+      const data = (await response.json()) as {
+        query?: {
+          pages?: Record<string, {
+            imageinfo?: Array<{ url?: string; width?: number; height?: number; mime?: string }>;
+          }>;
+        };
+      };
+
+      const candidates = Object.values(data.query?.pages || {})
+        .flatMap((page) => {
+          const info = page.imageinfo?.[0];
+          return info?.url
+            ? [{ url: info.url, width: Number(info.width) || 0 }]
+            : [];
+        })
+        .filter((candidate) => /^https?:\\/\\//i.test(candidate.url) && !usedImageUrls.has(candidate.url))
+        .sort((a, b) => b.width - a.width);
+
+      for (const candidate of candidates.slice(0, 8)) {
+        if (await isUsableImageUrl(candidate.url, {
+          minimumBytes: 140000,
+          minimumWidth: 1000,
+          minimumHeight: 650,
+        })) {
+          return candidate.url;
+        }
+      }
+    } catch {
+      // Continue with search-based Wikimedia discovery.
+    }
+  }
+
   for (const query of queries) {
     try {
       const params = new URLSearchParams({
@@ -1633,6 +1696,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     ...report,
     places,
     images,
+    image_hydration_version: 2,
   };
 }
 
@@ -3005,13 +3069,25 @@ export default {
         // The report remains usable if map enrichment is temporarily unavailable.
       }
 
-      // Older reports may have been generated before image hydration existed.
-      // Refresh their imagery on first view so existing paid reports benefit too.
-      if (!Array.isArray(reportContent.images) || reportContent.images.length === 0) {
+      // Recheck imagery when the image pipeline version is old or any place
+      // still lacks an image. This upgrades existing reports as the search improves.
+      const needsImageHydration =
+        reportContent.image_hydration_version !== 2 ||
+        reportContent.places.some((place) => !place.image_url);
+
+      if (needsImageHydration) {
         try {
           reportContent = await hydrateReportImages(reportContent);
+
+          await env.DB.prepare(`
+            UPDATE ancestry_reports
+            SET content_json = ?
+            WHERE id = ?
+          `)
+            .bind(JSON.stringify(reportContent), reportId)
+            .run();
         } catch {
-          // The report itself remains available even if image enrichment fails.
+          // The report itself remains available if image enrichment fails.
         }
       }
 
