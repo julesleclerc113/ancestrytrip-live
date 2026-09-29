@@ -731,9 +731,9 @@ async function generateHeritageReport(
     product === "deep" ? 5 : 3;
 
   const prompt = `
-You are the senior research editor for AncestryTrip, a premium heritage-travel service.
+You are the senior research editor and heritage-travel investigator for AncestryTrip, a paid service.
 
-Create a genuinely useful, location-specific heritage travel report for a paying customer.
+Create a research-led heritage journey for a paying customer. The report must be useful even when the family connection cannot yet be proved. It must never manufacture genealogy, citations, places, images, or certainty.
 
 CUSTOMER
 Name: ${customerName}
@@ -746,201 +746,204 @@ PRODUCT
 ${selected.name}
 Itinerary length: ${itineraryDays} days
 
-YOUR JOB
+CORE STANDARD
 
-Research the ancestral place using Google Search and turn the results into a practical heritage journey.
+This is NOT a generic travel guide and NOT a surname essay.
 
-The report must feel substantially more valuable than a generic travel guide.
+The paid value comes from connecting the customer's actual clues to:
+1. concrete evidence found through web research;
+2. real archives, record collections, institutions and historically relevant places;
+3. a clear distinction between verified facts, reasonable interpretations and unresolved leads;
+4. a practical journey that lets the customer continue the investigation in person.
 
-RESEARCH REQUIREMENTS
+A report with beautiful prose but no customer-specific evidence is a failed report.
 
-You are doing an investigation, not writing a destination guide.
+RESEARCH EXECUTION PROTOCOL
 
-A. RESOLVE THE PLACE
+Work in this order. Do not jump straight to tourist attractions.
 
-Establish exactly what geographic place the customer supplied:
-- modern municipality, town or village;
-- department/county/region;
-- historical names or spellings where relevant;
-- historical jurisdictions that could affect where records are held;
-- relevant parish or commune names.
+PHASE 1 — RESOLVE THE GEOGRAPHY
+Establish the exact modern place supplied by the customer and its relevant historical geography:
+- municipality/town/village;
+- region, county/department/province and country;
+- historical names and spellings;
+- historical jurisdictions that affect where records are held;
+- relevant parish/commune/district names;
+- boundary or jurisdiction changes that could explain why records may be elsewhere.
 
-Do not assume that the modern place name is the historical administrative unit in which the family's records were created.
+Use authoritative geographic, municipal, archival or institutional sources where available.
 
-B. DEFINE THE FAMILY RESEARCH TARGET
-
-Extract every usable clue supplied by the customer:
-- family name;
-- plausible surname spelling only when supported by evidence;
-- birth year or approximate period;
+PHASE 2 — EXTRACT THE FAMILY TARGET
+Treat every supplied clue as potentially important:
+- surname and exact spelling;
+- given name;
+- birth year/date;
 - birth place;
 - ancestral place;
-- occupations;
+- occupation;
 - religion;
-- migration information;
+- migration;
 - named relatives;
-- other concrete family clues.
+- military or immigration details;
+- anything else concrete in the customer's notes.
 
-Treat the family name and other personal clues as the primary research target.
+Do not invent missing facts. Do not silently "correct" a surname.
 
-C. SEARCH THE FAMILY CLUE FIRST
+PHASE 3 — SEARCH THE FAMILY CLUE FIRST
+Use Google Search deliberately. Run multiple focused searches rather than relying on one query.
 
-Use Google Search to investigate the actual family clue together with the ancestral place.
+At minimum, consider:
+- exact surname + ancestral place;
+- exact surname + historical jurisdiction;
+- exact surname + genealogy;
+- exact surname + parish/church;
+- exact surname + civil registration;
+- exact surname + census;
+- exact surname + military;
+- exact surname + cemetery;
+- exact surname + archive;
+- exact surname + occupation or other supplied clue.
 
-Run several focused searches where appropriate:
-- exact family-name + place;
-- family-name + department/region;
-- family-name + genealogy;
-- family-name + parish;
-- family-name + civil registration;
-- family-name + census;
-- family-name + military;
-- family-name + cemetery;
-- family-name + archive;
-- family-name + historical directory;
-- family-name + relevant institution or occupation.
+Then follow promising results with narrower searches for the named person, institution, parish, record collection, street, cemetery, workplace or historical event.
 
-Do not invent surname variants merely because they look linguistically similar. Use a variant only when there is a credible reason for it.
+Search the relevant country in its local terminology where useful, but do not assume France or Europe. AncestryTrip serves customers worldwide.
 
-D. EVALUATE THE EVIDENCE
+Do not manufacture surname variants. Only use a variant when a consulted source, historical spelling, indexing convention, transliteration or other concrete evidence justifies it.
 
-For each potentially useful result, determine:
+PHASE 4 — EVALUATE EACH RESULT
+For every potentially important result, ask:
+- Does it actually mention the customer's clue?
+- Does it concern the right place or historical jurisdiction?
+- What exact fact does it establish?
+- Is it a primary source, official institutional source, reputable secondary source, genealogy database, or merely a lead?
+- Does it establish something about this customer's family, or only about people/place history generally?
+- What would confirm or disprove the connection?
 
-1. Does the source actually mention the customer's family clue?
-2. Does it concern the ancestral place or its historical jurisdiction?
-3. What exact fact does the source establish?
-4. Is the source authoritative, secondary, or merely a research lead?
-5. Does the evidence concern this customer's family, or only the place in general?
-6. What further record would confirm or disprove the connection?
+Do not treat search-engine snippets as evidence when the underlying page does not support the claim.
 
-A general page about the town is not evidence that the customer's family lived there.
-
-A genealogy website mentioning the surname is not proof that it is the customer's family.
-
-A historical occupation in the town is not evidence that the customer or ancestor had that occupation.
-
-E. BUILD AN EVIDENCE CHAIN
-
-Before presenting an important finding, establish:
+PHASE 5 — BUILD AN EVIDENCE CHAIN
+For every important family-specific finding, internally establish:
 
 CUSTOMER CLUE
-->
-SEARCH QUERY
-->
-SPECIFIC SOURCE OR RECORD
-->
-FACT ESTABLISHED BY THAT SOURCE
-->
-WHY THAT FACT MATTERS TO THIS FAMILY RESEARCH
+→ SEARCH/RESEARCH PATH
+→ SPECIFIC SOURCE OR RECORD
+→ FACT ACTUALLY ESTABLISHED
+→ RELEVANCE TO THIS FAMILY
 
-If one of these links is missing, downgrade the statement to a research lead or omit it.
+If the chain is incomplete, do not present the conclusion as verified.
 
-F. ONLY THEN RESEARCH THE HERITAGE LANDSCAPE
+Use confidence exactly:
+- "verified": directly supported by a consulted source or record;
+- "probable": supported by multiple relevant clues but not conclusively established;
+- "lead": useful unresolved possibility or next research direction.
 
-After investigating the family clue, research the local historical landscape needed to interpret the evidence.
+Never upgrade a lead merely because it sounds plausible.
+
+PHASE 6 — HANDLE NEGATIVE RESULTS
+Negative research is valuable.
+
+If searches do not find a direct reference to the customer's family, explicitly say that no direct family-specific result was located in the searched material.
+
+Then explain what was established instead and identify the most useful next records to inspect.
+
+Never manufacture a family connection from:
+- surname frequency;
+- a famous person with the same surname;
+- a general town-history page;
+- a church merely because it is old;
+- a cemetery merely because it exists;
+- a local occupation;
+- an unrelated genealogy-tree entry;
+- an attractive tourist site.
+
+PHASE 7 — RESEARCH THE HERITAGE LANDSCAPE
+Only after the family clue has been investigated, identify the local places that help interpret or continue the investigation.
 
 Prioritize:
-- municipal and regional government sources;
-- national, regional, diocesan or municipal archives;
+- national/regional/municipal archives;
+- civil-registration authorities;
+- diocesan/parish/religious archives;
 - museums and heritage institutions;
+- libraries and universities;
 - established historical societies;
-- official tourism organizations;
-- universities and libraries.
+- official municipal or tourism institutions;
+- cemeteries, churches, neighbourhoods, ports, stations, workplaces or landmarks when they have a specific research connection.
 
-Use broader local history only when it helps explain:
-- a confirmed or probable family connection;
-- where relevant records are held;
-- why a particular place matters to the investigation;
-- what the traveller can physically see that helps interpret the family history.
+For every place, explain the investigative role. Prefer 5–8 genuinely relevant places. Do not pad the list.
 
-G. HANDLE NEGATIVE RESULTS HONESTLY
+PHASE 8 — RESEARCH-LED ITINERARY
+Build the itinerary from the evidence, not from generic sightseeing.
 
-If the searches do not produce a concrete reference to the customer's family clue, say so clearly.
+Every day must have:
+- a specific research/heritage objective;
+- named places from the report;
+- a concrete action;
+- the evidence or question that action advances.
 
-Do not manufacture a family connection from:
-- the existence of the surname in a region;
-- a famous family with the same surname;
-- generic town history;
-- a local occupation;
-- an old church, cemetery or building;
-- a genealogy website that cannot connect the person to the customer.
+The sequence should progress logically:
+- establish the geographic/historical setting;
+- investigate the strongest family/research trail;
+- visit the most relevant institutions/places;
+- reserve time for unresolved records and verification;
+- finish with a concrete synthesis or next-step activity.
 
-A negative result is useful information when it identifies what has and has not yet been established.
+Do not repeat "walk around the historic centre" or similar generic activities.
 
-H. PRIORITIZE RESEARCH VALUE OVER TOURISM VALUE
+PHASE 9 — SOURCES
+Sources are part of the product, not decoration.
 
-Every proposed place should answer at least one of these questions:
+Include only real webpages actually consulted during the research. Prefer primary and authoritative sources.
 
-- Could it contain or provide access to records relevant to the family clue?
-- Does it help explain a fact established by the research?
-- Does it correspond to a historically relevant parish, neighbourhood, institution, cemetery or workplace?
-- Does it give the traveller a concrete way to investigate or understand the family connection?
+For each important finding, use sources that support the exact claim. Do not cite a homepage merely because it belongs to an institution mentioned elsewhere.
 
-If it does none of these things, leave it out even if it is a popular tourist attraction.
+Never invent URLs. Never put a guessed URL into the JSON.
 
-For places, prefer 5-8 genuinely relevant locations rather than padding the list.
+PHASE 10 — IMAGES
+Actively look for 2–4 useful, research-specific images on consulted pages when available:
+- archives;
+- museums;
+- churches;
+- cemeteries;
+- historic streets;
+- ports/stations;
+- historic maps;
+- municipal or heritage collections.
 
-EVIDENCE COVERAGE STANDARD
+Use only direct image URLs actually exposed by a consulted webpage, paired with that page's URL. Never guess an image filename and never use generic stock photography to fill the field.
 
-The finished report must contain a useful evidence layer even when the family connection is not proven.
+QUALITY GATES BEFORE OUTPUT
 
-- Produce 2-6 findings when the research supports them.
-- Every finding must state a concrete fact, the evidence behind it, and why it matters.
-- At least one finding should address the strongest direct family clue or explicitly state that no direct family-specific result was found.
-- Do not fill the findings array with generic statements about the town.
-- If direct family evidence is absent, make that absence explicit and use the findings to document the most useful place, archive, jurisdiction or record-system facts that determine the next research step.
-- Produce 4-8 research leads when the available evidence allows it. Each lead must name a real institution, collection, database or record type and a specific question to investigate.
-- Practical notes should be actionable and location-specific where possible: archive access, appointment requirements, relevant jurisdictions, record languages, opening constraints, or other facts that affect the trip.
+Before returning JSON, silently audit the report:
 
-I. PLAN THE JOURNEY FROM THE EVIDENCE
+1. FAMILY-SPECIFIC VALUE
+At least one finding must directly address the customer's family clue OR explicitly state that no direct family-specific result was found.
 
-The itinerary must follow the research trail discovered above.
+2. EVIDENCE DISCIPLINE
+Every "verified" finding must have concrete supporting evidence. Every "probable" conclusion must make its uncertainty clear. Unresolved material must be a "lead".
 
-Do not create a generic sightseeing itinerary and then add archives to it.
+3. RESEARCH ACTIONABILITY
+Research leads must name an actual institution, collection, database, record type, jurisdiction or other concrete resource and a specific question to investigate.
 
-Each day should have:
-- a clear research or heritage objective;
-- specific places connected to that objective;
-- a concrete action the traveller can take;
-- a reason that action matters to the family investigation.
+4. PLACE RELEVANCE
+Every place must have a specific role in the family investigation or in interpreting an established historical fact. Remove generic attractions.
 
-Day 1 should establish the historical and geographic landscape relevant to the clue.
+5. ITINERARY INTEGRITY
+Every itinerary day must connect to named places, findings or research leads. Each day must advance the investigation.
 
-Later days should progressively follow the family/research trail.
+6. SOURCE INTEGRITY
+Only use URLs actually surfaced by the research. Do not invent, guess or normalize an unverified URL into existence.
 
-The final day should have a concrete research or heritage purpose.
+7. HONEST LIMITATIONS
+If the evidence is thin, say so. A smaller report with honest research is better than a longer report padded with generic material.
 
-J. FINAL EVIDENCE CHECK
-
-Before returning the report, review every important claim.
-
-For each claim ask:
-
-"What source supports this exact statement?"
-
-If there is no supporting source or supplied customer information:
-- remove the claim; or
-- clearly label it as a research lead or hypothesis.
-
-Never present an inference as a verified family fact.
-
-QUALITY BAR
-
-The report must feel substantially more valuable than a generic travel guide.
-
-Do not write generic statements such as:
-"Explore the historic centre."
-"Visit local museums."
-"Look at archives."
-
-Instead, identify the actual place, institution, archive, church, cemetery, museum, district, landmark or other relevant resource whenever the research supports it, and explain:
-- why it matters to this customer's family investigation;
-- what the traveller should see or do there;
-- what specific record, clue or evidence the traveller should look for.
-
-For research leads, provide the actual institution or resource name and the specific record or question to investigate.
-
-The report should read like expert editorial work prepared specifically for this customer's clue.
+8. CUSTOMER VALUE
+The customer should finish knowing:
+- what has actually been established;
+- what remains uncertain;
+- where to go;
+- what to ask for;
+- what records to inspect;
+- what question each visit is intended to answer.
 
 OUTPUT FORMAT
 
@@ -1797,1025 +1800,3 @@ async function verifyStripeWebhookSignature(
 
   let timestamp = "";
   const signatures: string[] = [];
-
-  for (const part of parts) {
-    const [key, value] = part.split("=", 2);
-
-    if (key === "t") {
-      timestamp = value;
-    }
-
-    if (key === "v1" && value) {
-      signatures.push(value);
-    }
-  }
-
-  if (!timestamp || signatures.length === 0) {
-    return false;
-  }
-
-  const timestampNumber = Number(timestamp);
-
-  if (!Number.isFinite(timestampNumber)) {
-    return false;
-  }
-
-  const age = Math.abs(Date.now() / 1000 - timestampNumber);
-
-  if (age > 300) {
-    return false;
-  }
-
-  const signedPayload = `${timestamp}.${payload}`;
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    {
-      name: "HMAC",
-      hash: "SHA-256",
-    },
-    false,
-    ["verify"],
-  );
-
-  for (const signature of signatures) {
-    if (!/^[0-9a-fA-F]+$/.test(signature)) {
-      continue;
-    }
-
-    const hexBytes =
-      signature.match(/.{1,2}/g) || [];
-
-    const bytes = new Uint8Array(
-      hexBytes.map((byte) =>
-        parseInt(byte, 16),
-      ),
-    );
-
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      bytes,
-      new TextEncoder().encode(signedPayload),
-    );
-
-    if (valid) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-async function createStripeCheckout(
-  request: Request,
-  env: Env,
-  tripId: string,
-  product: keyof typeof PRODUCTS,
-  email: string,
-) {
-  const selected = PRODUCTS[product];
-  const url = new URL(request.url);
-
-  const successUrl =
-    `${url.origin}/success` +
-    `?session_id={CHECKOUT_SESSION_ID}` +
-    `&trip_id=${encodeURIComponent(tripId)}` +
-    `&product=${encodeURIComponent(product)}`;
-
-  const cancelUrl = `${url.origin}/#preview`;
-
-  const body = new URLSearchParams();
-
-  body.set("mode", "payment");
-  body.set("managed_payments[enabled]", "false");
-  body.set("customer_email", email);
-  body.set("client_reference_id", tripId);
-  body.set("line_items[0][price]", selected.priceId);
-  body.set("line_items[0][quantity]", "1");
-  body.set("success_url", successUrl);
-  body.set("cancel_url", cancelUrl);
-  body.set("metadata[trip_id]", tripId);
-  body.set("metadata[product]", product);
-
-  const stripeResponse = await fetch(
-    "https://api.stripe.com/v1/checkout/sessions",
-    {
-      method: "POST",
-      headers: {
-        Authorization:
-          `Basic ${btoa(`${env.STRIPE_SECRET_KEY}:`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-    },
-  );
-
-  const stripeData = (await stripeResponse.json()) as StripeSession & {
-    error?: {
-      message?: string;
-    };
-  };
-
-  if (!stripeResponse.ok || !stripeData.url) {
-    console.error("Stripe Checkout creation failed:", stripeData);
-
-    throw new Error(
-      stripeData.error?.message ||
-        "Stripe could not create the checkout session.",
-    );
-  }
-
-  await env.DB.prepare(`
-    INSERT INTO ancestry_payments (
-      id,
-      trip_id,
-      stripe_session_id,
-      product,
-      amount_cents,
-      currency,
-      payment_status
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `)
-    .bind(
-      crypto.randomUUID().replaceAll("-", ""),
-      tripId,
-      stripeData.id,
-      product,
-      selected.amountCents,
-      "eur",
-      "pending",
-    )
-    .run();
-
-  return {
-    checkoutUrl: stripeData.url,
-    sessionId: stripeData.id,
-  };
-}
-
-async function getPaidCheckout(
-  env: Env,
-  sessionId: string,
-) {
-  const stripeResponse = await fetch(
-    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization:
-          `Basic ${btoa(`${env.STRIPE_SECRET_KEY}:`)}`,
-      },
-    },
-  );
-
-  const session = (await stripeResponse.json()) as StripeSession & {
-    error?: {
-      message?: string;
-    };
-  };
-
-  if (!stripeResponse.ok) {
-    throw new Error(
-      session.error?.message ||
-        "Unable to verify the Stripe checkout session.",
-    );
-  }
-
-  const payment = await env.DB.prepare(`
-    SELECT
-      id,
-      trip_id,
-      product,
-      amount_cents,
-      currency,
-      payment_status
-    FROM ancestry_payments
-    WHERE stripe_session_id = ?
-    LIMIT 1
-  `)
-    .bind(sessionId)
-    .first<{
-      id: string;
-      trip_id: string;
-      product: string;
-      amount_cents: number;
-      currency: string;
-      payment_status: string;
-    }>();
-
-  if (!payment) {
-    throw new Error("Payment record not found.");
-  }
-
-  if (session.metadata?.trip_id !== payment.trip_id) {
-    throw new Error("Payment does not match this trip.");
-  }
-
-  if (session.metadata?.product !== payment.product) {
-    throw new Error("Payment product does not match.");
-  }
-
-  const isPaid =
-    session.status === "complete" &&
-    session.payment_status === "paid";
-
-  if (!isPaid) {
-    return {
-      paid: false as const,
-      status: session.payment_status || "unpaid",
-      product: payment.product,
-    };
-  }
-
-  if (
-    session.amount_total !== payment.amount_cents ||
-    session.currency?.toLowerCase() !==
-      payment.currency.toLowerCase()
-  ) {
-    throw new Error("Payment amount or currency does not match.");
-  }
-
-  await env.DB.prepare(`
-    UPDATE ancestry_payments
-    SET payment_status = 'paid'
-    WHERE id = ?
-      AND payment_status IN ('pending', 'paid')
-  `)
-    .bind(payment.id)
-    .run();
-
-  return {
-    paid: true as const,
-    paymentId: payment.id,
-    product: payment.product,
-    amountCents: payment.amount_cents,
-    email: session.customer_email,
-    tripId: payment.trip_id,
-  };
-}
-
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-async function sendReportReadyEmail(
-  env: Env,
-  paymentId: string,
-  reportId: string,
-  origin: string,
-) {
-  const claim = await env.DB.prepare(`
-    UPDATE ancestry_payments
-    SET email_status = 'sending',
-        email_error = NULL
-    WHERE id = ?
-      AND payment_status = 'fulfilled'
-      AND email_status IN ('pending', 'failed')
-  `)
-    .bind(paymentId)
-    .run();
-
-  if (!claim.meta.changes) {
-    return;
-  }
-
-  try {
-    const payment = await env.DB.prepare(`
-      SELECT
-        p.product,
-        t.email,
-        t.first_name,
-        t.last_name
-      FROM ancestry_payments p
-      INNER JOIN ancestry_trips t
-        ON t.id = p.trip_id
-      WHERE p.id = ?
-      LIMIT 1
-    `)
-      .bind(paymentId)
-      .first<{
-        product: string;
-        email: string;
-        first_name: string | null;
-        last_name: string | null;
-      }>();
-
-    if (!payment) {
-      throw new Error("Payment record not found for email delivery.");
-    }
-
-    if (!env.RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured.");
-    }
-
-    const customerName =
-      [payment.first_name, payment.last_name]
-        .filter(Boolean)
-        .join(" ") || "there";
-
-    const reportUrl =
-      `${origin}/report/${encodeURIComponent(reportId)}`;
-
-    const productName =
-      payment.product === "deep"
-        ? "Deep Heritage Trip"
-        : "Heritage Trip";
-
-    const resendResponse = await fetch(
-      "https://api.resend.com/emails",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": `report-ready/${paymentId}`,
-        },
-        body: JSON.stringify({
-          from:
-            "AncestryTrip <onboarding@resend.dev>",
-          to: [payment.email],
-          subject:
-            "Your AncestryTrip heritage journey is ready",
-          html: `
-            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f1f1f;max-width:640px;margin:0 auto;padding:32px 20px">
-              <p style="font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6f6f6f">ANCESTRYTRIP</p>
-              <h1 style="font-family:Georgia,serif;font-weight:500;font-size:34px;line-height:1.15">Your heritage journey is ready.</h1>
-              <p>Hello ${escapeHtml(customerName)},</p>
-              <p>Your ${escapeHtml(productName)} report has been researched and is ready to read.</p>
-              <p><a href="${escapeHtml(reportUrl)}" style="display:inline-block;background:#1f1f1f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:4px">Open my report</a></p>
-              <p style="font-size:14px;color:#666">You can return to this link whenever you want to revisit your report.</p>
-              <p style="font-family:Georgia,serif">AncestryTrip<br><span style="font-family:Arial,sans-serif;font-size:14px;color:#666">Turn your family history into a journey.</span></p>
-            </div>
-          `,
-        }),
-      },
-    );
-
-    if (!resendResponse.ok) {
-      const errorText = await resendResponse.text();
-      throw new Error(
-        `Resend rejected the email: ${resendResponse.status} ${errorText.slice(0, 500)}`,
-      );
-    }
-
-    await env.DB.prepare(`
-      UPDATE ancestry_payments
-      SET email_status = 'sent',
-          email_sent_at = CURRENT_TIMESTAMP,
-          email_error = NULL
-      WHERE id = ?
-    `)
-      .bind(paymentId)
-      .run();
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown email delivery error.";
-
-    console.error("Report email delivery failed:", message);
-
-    await env.DB.prepare(`
-      UPDATE ancestry_payments
-      SET email_status = 'failed',
-          email_error = ?
-      WHERE id = ?
-        AND email_status = 'sending'
-    `)
-      .bind(message.slice(0, 1000), paymentId)
-      .run();
-  }
-}
-
-async function generateReportForPayment(
-  env: Env,
-  paymentId: string,
-  origin: string,
-) {
-  const claim = await env.DB.prepare(`
-    UPDATE ancestry_payments
-    SET payment_status = 'generating'
-    WHERE id = ?
-      AND payment_status = 'paid'
-  `)
-    .bind(paymentId)
-    .run();
-
-  if (!claim.meta.changes) {
-    return;
-  }
-
-  try {
-    const payment = await env.DB.prepare(`
-      SELECT
-        id,
-        trip_id,
-        product
-      FROM ancestry_payments
-      WHERE id = ?
-      LIMIT 1
-    `)
-      .bind(paymentId)
-      .first<{
-        id: string;
-        trip_id: string;
-        product: string;
-      }>();
-
-    if (!payment) {
-      throw new Error("Payment record not found while generating report.");
-    }
-
-    const existingReport = await env.DB.prepare(`
-      SELECT id
-      FROM ancestry_reports
-      WHERE payment_id = ?
-      LIMIT 1
-    `)
-      .bind(payment.id)
-      .first<{ id: string }>();
-
-    if (existingReport) {
-      await env.DB.prepare(`
-        UPDATE ancestry_payments
-        SET payment_status = 'fulfilled'
-        WHERE id = ?
-      `)
-        .bind(payment.id)
-        .run();
-
-      await sendReportReadyEmail(
-        env,
-        payment.id,
-        existingReport.id,
-        origin,
-      );
-      return;
-    }
-
-    const trip = await env.DB.prepare(`
-      SELECT
-        first_name,
-        last_name,
-        email,
-        ancestral_place,
-        birth_year,
-        birth_place,
-        notes
-      FROM ancestry_trips
-      WHERE id = ?
-      LIMIT 1
-    `)
-      .bind(payment.trip_id)
-      .first<{
-        first_name: string | null;
-        last_name: string | null;
-        email: string;
-        ancestral_place: string;
-        birth_year: number | null;
-        birth_place: string | null;
-        notes: string | null;
-      }>();
-
-    if (!trip) {
-      throw new Error("Trip record not found.");
-    }
-
-    const product =
-      payment.product === "deep"
-        ? "deep"
-        : "heritage";
-
-    const report = await generateHeritageReport(
-      env,
-      trip,
-      product,
-    );
-
-    const reportId = crypto.randomUUID().replaceAll("-", "");
-
-    await env.DB.prepare(`
-      INSERT OR IGNORE INTO ancestry_reports (
-        id,
-        trip_id,
-        payment_id,
-        content_json
-      )
-      VALUES (?, ?, ?, ?)
-    `)
-      .bind(
-        reportId,
-        payment.trip_id,
-        payment.id,
-        JSON.stringify(report),
-      )
-      .run();
-
-    await env.DB.prepare(`
-      UPDATE ancestry_payments
-      SET payment_status = 'fulfilled'
-      WHERE id = ?
-    `)
-      .bind(payment.id)
-      .run();
-
-    const storedReport = await env.DB.prepare(`
-      SELECT id
-      FROM ancestry_reports
-      WHERE payment_id = ?
-      LIMIT 1
-    `)
-      .bind(payment.id)
-      .first<{ id: string }>();
-
-    if (!storedReport) {
-      throw new Error("Report was not stored after generation.");
-    }
-
-    await sendReportReadyEmail(
-      env,
-      payment.id,
-      storedReport.id,
-      origin,
-    );
-  } catch (error) {
-    console.error(
-      "Background report generation failed:",
-      error,
-    );
-
-    await env.DB.prepare(`
-      UPDATE ancestry_payments
-      SET payment_status = 'paid'
-      WHERE id = ?
-        AND payment_status = 'generating'
-    `)
-      .bind(paymentId)
-      .run();
-  }
-}
-
-async function verifyStripeCheckout(
-  env: Env,
-  sessionId: string,
-  ctx: ExecutionContext,
-  origin: string,
-) {
-  const checkout = await getPaidCheckout(
-    env,
-    sessionId,
-  );
-
-  if (!checkout.paid) {
-    return checkout;
-  }
-
-  const existingReport = await env.DB.prepare(`
-    SELECT id, content_json
-    FROM ancestry_reports
-    WHERE payment_id = ?
-    LIMIT 1
-  `)
-    .bind(checkout.paymentId)
-    .first<{
-      id: string;
-      content_json: string;
-    }>();
-
-  if (existingReport) {
-    await env.DB.prepare(`
-      UPDATE ancestry_payments
-      SET payment_status = 'fulfilled'
-      WHERE id = ?
-    `)
-      .bind(checkout.paymentId)
-      .run();
-
-    await sendReportReadyEmail(
-      env,
-      checkout.paymentId,
-      existingReport.id,
-      origin,
-    );
-
-    return {
-      ...checkout,
-      reportId: existingReport.id,
-      report: JSON.parse(existingReport.content_json),
-      reportStatus: "ready",
-    };
-  }
-
-  ctx.waitUntil(
-    generateReportForPayment(
-      env,
-      checkout.paymentId,
-      origin,
-    ),
-  );
-
-  return {
-    ...checkout,
-    reportStatus: "generating",
-  };
-}
-
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/api" || url.pathname === "/api/") {
-      return json({
-        name: "AncestryTrip",
-        status: "online",
-      });
-    }
-
-    if (url.pathname === "/api/health") {
-      const result = await env.DB
-        .prepare("SELECT 1 AS ok")
-        .first<{ ok: number }>();
-
-      return json({
-        status:
-          result?.ok === 1 ? "healthy" : "degraded",
-        database: result?.ok === 1,
-      });
-    }
-
-    if (
-      url.pathname === "/api/preview" &&
-      request.method === "POST"
-    ) {
-      let input: TripInput;
-
-      try {
-        input = (await request.json()) as TripInput;
-      } catch {
-        return json(
-          { error: "Invalid JSON request." },
-          400,
-        );
-      }
-
-      if (!input.email?.trim()) {
-        return json(
-          { error: "Email is required." },
-          400,
-        );
-      }
-
-      if (!input.ancestralPlace?.trim()) {
-        return json(
-          { error: "An ancestral place is required." },
-          400,
-        );
-      }
-
-      const tripId = crypto
-        .randomUUID()
-        .replaceAll("-", "");
-
-      const preview = buildPreview(input);
-
-      await env.DB.prepare(`
-        INSERT INTO ancestry_trips (
-          id,
-          email,
-          first_name,
-          last_name,
-          birth_year,
-          birth_place,
-          ancestral_place,
-          notes,
-          preview_json
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-        .bind(
-          tripId,
-          input.email.trim(),
-          input.firstName?.trim() || null,
-          input.lastName?.trim() || null,
-          input.birthYear || null,
-          input.birthPlace?.trim() || null,
-          input.ancestralPlace.trim(),
-          input.notes?.trim() || null,
-          JSON.stringify(preview),
-        )
-        .run();
-
-      return json({
-        tripId,
-        preview,
-      });
-    }
-
-    if (
-      url.pathname === "/api/stripe/webhook" &&
-      request.method === "POST"
-    ) {
-      const signature = request.headers.get("Stripe-Signature");
-
-      if (!signature) {
-        return json(
-          { error: "Missing Stripe-Signature header." },
-          400,
-        );
-      }
-
-      const payload = await request.text();
-
-      const validSignature =
-        await verifyStripeWebhookSignature(
-          payload,
-          signature,
-          env.STRIPE_WEBHOOK_SECRET,
-        );
-
-      if (!validSignature) {
-        return json(
-          { error: "Invalid webhook signature." },
-          400,
-        );
-      }
-
-      let event: {
-        type: string;
-        data?: {
-          object?: {
-            id?: string;
-          };
-        };
-      };
-
-      try {
-        event = JSON.parse(payload);
-      } catch {
-        return json(
-          { error: "Invalid webhook payload." },
-          400,
-        );
-      }
-
-      const supportedEvents = [
-        "checkout.session.completed",
-        "checkout.session.async_payment_succeeded",
-      ];
-
-      if (!supportedEvents.includes(event.type)) {
-        return json({ received: true });
-      }
-
-      const sessionId = event.data?.object?.id;
-
-      if (!sessionId) {
-        return json(
-          { error: "Webhook event has no Checkout Session ID." },
-          400,
-        );
-      }
-
-      try {
-        const checkout = await getPaidCheckout(env, sessionId);
-
-        if (checkout.paid) {
-          ctx.waitUntil(
-            generateReportForPayment(
-              env,
-              checkout.paymentId,
-              url.origin,
-            ),
-          );
-        }
-
-        return json({ received: true });
-      } catch (error) {
-        console.error(
-          "Webhook fulfillment error:",
-          error,
-        );
-
-        return json(
-          { error: "Fulfillment failed." },
-          500,
-        );
-      }
-    }
-
-    if (
-      url.pathname === "/api/checkout" &&
-      request.method === "POST"
-    ) {
-      let input: CheckoutRequest;
-
-      try {
-        input = (await request.json()) as CheckoutRequest;
-      } catch {
-        return json(
-          { error: "Invalid JSON request." },
-          400,
-        );
-      }
-
-      if (!input.tripId) {
-        return json(
-          { error: "Trip ID is required." },
-          400,
-        );
-      }
-
-      if (!PRODUCTS[input.product]) {
-        return json(
-          { error: "Invalid product." },
-          400,
-        );
-      }
-
-      const trip = await env.DB.prepare(`
-        SELECT id, email
-        FROM ancestry_trips
-        WHERE id = ?
-        LIMIT 1
-      `)
-        .bind(input.tripId)
-        .first<{
-          id: string;
-          email: string;
-        }>();
-
-      if (!trip) {
-        return json(
-          { error: "Trip not found." },
-          404,
-        );
-      }
-
-      try {
-        const checkout =
-          await createStripeCheckout(
-            request,
-            env,
-            trip.id,
-            input.product,
-            trip.email,
-          );
-
-        return json(checkout);
-      } catch (error) {
-        console.error("Checkout error:", error);
-
-        return json(
-          {
-            error:
-              error instanceof Error
-                ? error.message
-                : "Unable to start checkout.",
-          },
-          502,
-        );
-      }
-    }
-
-    if (
-      url.pathname.startsWith("/api/reports/") &&
-      request.method === "GET"
-    ) {
-      const reportId = url.pathname.slice("/api/reports/".length);
-
-      if (!/^[a-f0-9-]{32,36}$/i.test(reportId)) {
-        return json({ error: "Invalid report ID." }, 400);
-      }
-
-      const report = await env.DB.prepare(`
-        SELECT
-          r.id,
-          r.content_json,
-          p.product,
-          p.amount_cents,
-          p.payment_status
-        FROM ancestry_reports r
-        INNER JOIN ancestry_payments p
-          ON p.id = r.payment_id
-        WHERE r.id = ?
-        LIMIT 1
-      `)
-        .bind(reportId)
-        .first<{
-          id: string;
-          content_json: string;
-          product: string;
-          amount_cents: number;
-          payment_status: string;
-        }>();
-
-      if (!report || report.payment_status !== "fulfilled") {
-        return json({ error: "Report not found." }, 404);
-      }
-
-      let reportContent: HeritageReport;
-
-      try {
-        reportContent = JSON.parse(report.content_json) as HeritageReport;
-      } catch {
-        return json({ error: "Stored report is invalid." }, 500);
-      }
-
-      // Older reports may have been generated before map coordinates were stored.
-      // Enrich them once on first view; later marker clicks use the stored coordinates.
-      try {
-        const enrichedReport = await hydrateReportMapCoordinates(env, reportContent);
-
-        if (
-      JSON.stringify(enrichedReport.places) !== JSON.stringify(reportContent.places) ||
-      enrichedReport.map_coordinates_version !== reportContent.map_coordinates_version
-    ) {
-          reportContent = enrichedReport;
-
-          await env.DB.prepare(`
-            UPDATE ancestry_reports
-            SET content_json = ?
-            WHERE id = ?
-          `)
-            .bind(JSON.stringify(reportContent), reportId)
-            .run();
-        }
-      } catch {
-        // The report remains usable if map enrichment is temporarily unavailable.
-      }
-
-      // Older reports may have been generated before image hydration existed.
-      // Refresh their imagery on first view so existing paid reports benefit too.
-      if (!Array.isArray(reportContent.images) || reportContent.images.length === 0) {
-        try {
-          reportContent = await hydrateReportImages(reportContent);
-        } catch {
-          // The report itself remains available even if image enrichment fails.
-        }
-      }
-
-      return json({
-        reportId: report.id,
-        report: reportContent,
-        product: report.product,
-        amountCents: report.amount_cents,
-      });
-    }
-
-    if (
-      url.pathname === "/api/checkout/verify" &&
-      request.method === "GET"
-    ) {
-      const sessionId =
-        url.searchParams.get("session_id");
-
-      if (!sessionId) {
-        return json(
-          {
-            error:
-              "Stripe session ID is required.",
-          },
-          400,
-        );
-      }
-
-      try {
-        const result =
-          await verifyStripeCheckout(
-            env,
-            sessionId,
-            ctx,
-            url.origin,
-          );
-
-        return json(result);
-      } catch (error) {
-        console.error(
-          "Payment verification error:",
-          error,
-        );
-
-        return json(
-          {
-            error:
-              error instanceof Error
-                ? error.message
-                : "Unable to verify payment.",
-          },
-          400,
-        );
-      }
-    }
-
-    return env.ASSETS.fetch(request);
-  },
-} satisfies ExportedHandler<Env>;
