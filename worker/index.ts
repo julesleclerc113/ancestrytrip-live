@@ -39,9 +39,31 @@ interface ReportPlace {
   category?: string;
   research_role?: string;
   image_url?: string;
+  image_fallback_url?: string;
   map_url?: string;
   latitude?: number;
   longitude?: number;
+}
+
+interface ReportHistoricalComparison {
+  place_name: string;
+  location: string;
+  historical_period: string;
+  historical_description: string;
+  current_description: string;
+  historical_image_url?: string;
+  historical_image_source_url?: string;
+  current_image_url?: string;
+  current_image_source_url?: string;
+}
+
+interface ReportTradition {
+  name: string;
+  period: string;
+  description: string;
+  place: string;
+  evidence: string;
+  source_url?: string;
 }
 
 interface ReportItineraryDay {
@@ -81,6 +103,8 @@ interface HeritageReport {
   caveats: string[];
   sources: ReportSource[];
   images?: ReportImage[];
+  historical_comparisons?: ReportHistoricalComparison[];
+  traditions?: ReportTradition[];
   image_hydration_version?: number;
 }
 
@@ -899,8 +923,8 @@ For each important finding, use sources that support the exact claim. Do not cit
 
 Never invent URLs. Never put a guessed URL into the JSON.
 
-PHASE 10 — IMAGES
-Actively look for 2–4 useful, research-specific images on consulted pages when available:
+PHASE 10 — VISUAL RESEARCH
+Actively look for useful, research-specific images on consulted pages when available:
 - archives;
 - museums;
 - churches;
@@ -908,9 +932,15 @@ Actively look for 2–4 useful, research-specific images on consulted pages when
 - historic streets;
 - ports/stations;
 - historic maps;
-- municipal or heritage collections.
+- municipal or heritage collections;
+- historic photographs of the same street, station, church, port, monument or other named place;
+- current photographs of those same places.
 
 Use only direct image URLs actually exposed by a consulted webpage, paired with that page's URL. Never guess an image filename and never use generic stock photography to fill the field.
+
+Also research 2–4 strong visual "then and now" comparisons. Prefer a specific place where an old photograph, historic map, or historic monument view can be compared with the same physical place today. Establish that the historical and current views refer to the same place. Explain what changed or survived. If no reliable historical visual exists, omit the comparison.
+
+Research 2–4 documented local traditions, habits, occupations, foods, celebrations, crafts, domestic practices, working practices, or other everyday customs relevant to the ancestral place. Prefer museum, archive, library, academic, municipal, ethnographic or historical-society sources. Distinguish documented history from modern tourism or folklore. Do not imply the customer's ancestors personally followed a tradition unless evidence establishes that.
 
 QUALITY GATES BEFORE OUTPUT
 
@@ -1005,6 +1035,27 @@ Return exactly one JSON object with these top-level fields and no others:
       "title": "A concise description of the place shown",
       "source_url": "https://example.com/page-about-the-place"
     }
+  ],
+  "historical_comparisons": [
+    {
+      "place_name": "The exact place shown",
+      "location": "Specific location",
+      "historical_period": "Approximate date or period",
+      "historical_description": "What the historical image, map or monument view shows.",
+      "current_description": "What survives or has changed today.",
+      "historical_image_url": "https://example.com/historical-image.jpg",
+      "historical_image_source_url": "https://example.com/page-with-historical-image"
+    }
+  ],
+  "traditions": [
+    {
+      "name": "A documented local tradition or historical habit",
+      "period": "The period when it is documented",
+      "description": "What people did and how it worked.",
+      "place": "Where it was practiced",
+      "evidence": "The historical evidence supporting it.",
+      "source_url": "https://example.com/source"
+    }
   ]
 }
 
@@ -1013,6 +1064,8 @@ FIELD RULES
 - Use exactly these top-level field names.
 - "sources" must be an array of the most important sources actually consulted during the research.
 - "images" must be an array containing 2-4 representative images whenever the research pages expose usable images; do not leave it empty merely because the page is not itself an image file.
+- "historical_comparisons" should contain 2-4 strong, source-backed then-and-now comparisons when reliable historical visuals exist. Each comparison must refer to the same physical place.
+- "traditions" should contain 2-4 source-backed historical traditions, habits, occupations, foods, celebrations, crafts, domestic practices or working practices from the ancestral place. Do not personalize them to the customer's family unless directly evidenced.
 - Actively look for visual material while researching: official archive photographs, museum collections, heritage pages, municipal history pages, historic maps, churches, cemeteries, streets, ports, stations and landscapes that are directly relevant to the report.
 - Never invent an image URL. Only use a direct image URL actually present on a consulted webpage, such as an og:image, twitter:image, gallery image or image asset linked from that page, and pair it with the exact webpage URL in "source_url".
 - Provide a distinct image for every place in the "places" list whenever a real image can be found.
@@ -1022,6 +1075,8 @@ FIELD RULES
 - If a real image clearly depicts a specific place in the "places" list, include the direct image URL as "image_url" on that place as well as including the webpage in "source_url". Never guess an image URL.
 - Do not reuse the same image URL for two different places.
 - If no suitable image exists for a particular place, omit the image rather than using an unrelated or generic photograph.
+- Historical comparison image URLs must follow the same direct-image rules, with the source webpage in "historical_image_source_url".
+- Do not use a modern image as the historical image or vice versa.
 - Keep image URLs separate from "sources"; sources remain normal webpages.
 - Each source must contain exactly "title" and "url".
 - Use real URLs from the research results.
@@ -1649,18 +1704,33 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
   const usedPlaceImages = new Set<string>();
 
   for (const place of report.places || []) {
-    if (
-      place.image_url &&
+    const originalImageIsUsable =
+      !!place.image_url &&
       /^https?:\/\//i.test(place.image_url) &&
       !usedPlaceImages.has(place.image_url) &&
       await isUsableImageUrl(place.image_url, {
         minimumBytes: 140000,
         minimumWidth: 1000,
         minimumHeight: 650,
-      })
-    ) {
-      usedPlaceImages.add(place.image_url);
-      places.push(place);
+      });
+
+    if (originalImageIsUsable) {
+      usedPlaceImages.add(place.image_url as string);
+
+      const browserFallback = await findFallbackPlaceImage(
+        place,
+        usedPlaceImages,
+      );
+
+      if (browserFallback) {
+        usedPlaceImages.add(browserFallback);
+        places.push({
+          ...place,
+          image_fallback_url: browserFallback,
+        });
+      } else {
+        places.push(place);
+      }
       continue;
     }
 
@@ -1678,25 +1748,41 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       continue;
     }
 
-    // Keep the original image as a last-resort visual rather than leaving
-    // the location card blank. The normal image validation above remains the
-    // quality gate for preferred images and the fallback search keeps trying
-    // other location-specific sources first.
-    if (place.image_url && /^https?:\/\//i.test(place.image_url)) {
-      places.push(place);
-    } else {
-      places.push({
-        ...place,
-        image_url: undefined,
-      });
-    }
+    places.push({
+      ...place,
+      image_url: undefined,
+    });
   }
+
+  const placeByName = new Map(
+    places.map((place) => [normalizePlaceText(place.name), place]),
+  );
+
+  const historicalComparisons = (report.historical_comparisons || [])
+    .slice(0, 4)
+    .map((comparison) => {
+      const place = placeByName.get(
+        normalizePlaceText(comparison.place_name),
+      );
+
+      return {
+        ...comparison,
+        current_image_url:
+          comparison.current_image_url || place?.image_url,
+      };
+    })
+    .filter(
+      (comparison) =>
+        !!comparison.historical_image_url &&
+        /^https?:\/\//i.test(comparison.historical_image_url),
+    );
 
   return {
     ...report,
     places,
     images,
-    image_hydration_version: 2,
+    historical_comparisons: historicalComparisons,
+    image_hydration_version: 3,
   };
 }
 
