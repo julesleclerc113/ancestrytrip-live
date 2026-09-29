@@ -269,7 +269,7 @@ function ReportExperience({
             <p>Choose a location below to move the live street map above to that place. The route itself shows research order, not geographic distance.</p>
           </div>
           <div className="research-map-pins">
-            {places.slice(0, 8).map((place, index) => {
+            {places.slice(0, 9).map((place, index) => {
               const pointCount = Math.min(places.length, routeAnchorPoints.length);
               const pointIndex =
                 pointCount <= 1
