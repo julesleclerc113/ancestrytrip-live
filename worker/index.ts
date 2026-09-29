@@ -1435,13 +1435,69 @@ async function geocodeReportPlace(
     ),
   );
 
+  // Resolve the report locality globally first. This gives us the
+  // country code without assuming the report is European or French.
+  let countryCode = "";
+
+  if (location) {
+    try {
+      const locationParams = new URLSearchParams({
+        text: location,
+        type: "city",
+        limit: "10",
+        format: "json",
+        lang: "en",
+        apiKey,
+      });
+
+      const locationResponse = await fetch(
+        "https://api.geoapify.com/v1/geocode/search?" +
+          locationParams.toString(),
+        {
+          headers: {
+            "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (locationResponse.ok) {
+        const locationData = (await locationResponse.json()) as {
+          results?: Array<{
+            city?: string;
+            country_code?: string;
+            formatted?: string;
+          }>;
+        };
+
+        const normalizedLocation = normalizePlaceText(location);
+        const locationResult = (locationData.results || []).find((result) => {
+          const resultText = normalizePlaceText(
+            [result.city, result.formatted].filter(Boolean).join(", "),
+          );
+          const locationParts = placeTokens(normalizedLocation);
+          return (
+            !!result.country_code &&
+            locationParts.length > 0 &&
+            locationParts.some((token) => resultText.includes(token))
+          );
+        });
+
+        countryCode = locationResult?.country_code?.toLowerCase() || "";
+      }
+    } catch {
+      // Continue with an unrestricted worldwide search if country resolution
+      // is unavailable.
+    }
+  }
+
   const queries: Array<{ text: string; type?: string }> = [
-    // Constrain named places by their supplied locality first. This prevents
-    // a generic exact-name match elsewhere in France from winning.
+    // Constrain named places by their supplied locality first. If the report
+    // country was resolved, the country filter makes duplicate names elsewhere
+    // in the world ineligible.
     ...nameCandidates.map((candidate) => ({
-      text: [candidate, location, "France"]
-        .filter(Boolean)
-        .join(", "),
+      text: [candidate, location].filter(Boolean).join(", "),
     })),
     // Then try the literal name as a discovery fallback, but an exact-name
     // result is only accepted if it also matches the supplied locality below.
@@ -1449,7 +1505,7 @@ async function geocodeReportPlace(
       text: candidate,
     })),
     {
-      text: [location, "France"].filter(Boolean).join(", "),
+      text: location,
       type: "city",
     },
   ];
@@ -1460,12 +1516,15 @@ async function geocodeReportPlace(
     try {
       const params = new URLSearchParams({
         text: query.text,
-        filter: "countrycode:fr",
         limit: "10",
         format: "json",
-        lang: "fr",
+        lang: "en",
         apiKey,
       });
+
+      if (countryCode) {
+        params.set("filter", "countrycode:" + countryCode);
+      }
 
       if (query.type) {
         params.set("type", query.type);
@@ -1686,7 +1745,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 7;
+  const forceRegeocode = report.map_coordinates_version !== 8;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1724,7 +1783,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 7 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 8 : report.map_coordinates_version,
     places,
   };
 }
