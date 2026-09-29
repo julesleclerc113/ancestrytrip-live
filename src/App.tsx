@@ -71,6 +71,7 @@ interface HeritageReport {
   caveats: string[];
   sources: ReportSource[];
   images?: ReportImage[];
+  image_hydration_version?: number;
 }
 
 interface PaymentVerification {
@@ -315,7 +316,16 @@ function ReportExperience({
                 {place.category && <span className="journey-category">{place.category}</span>}
               </div>
               {placeImage(place) ? (
-                <img src={placeImage(place)} alt={place.name} loading="lazy" />
+                <img
+                  src={placeImage(place)}
+                  alt={place.name}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                    const placeholder = event.currentTarget.nextElementSibling;
+                    if (placeholder instanceof HTMLElement) placeholder.style.display = "grid";
+                  }}
+                />
               ) : (
                 <div className="journey-image-placeholder" aria-hidden="true">
                   <span>{place.name}</span>
@@ -337,24 +347,43 @@ function ReportExperience({
         </div>
       </section>
 
-      {images.length > 1 && (
-        <section className="report-section report-gallery">
-          <div className="report-section-head">
-            <div>
-              <div className="report-kicker">THE PLACE TODAY</div>
-              <h2>A visual sense of the journey.</h2>
+      {(() => {
+        const placeGallery = places
+          .filter((place) => !!place.image_url)
+          .slice(0, 4)
+          .map((place) => ({
+            url: place.image_url as string,
+            title: place.name,
+          }));
+        const gallery =
+          placeGallery.length > 0
+            ? placeGallery
+            : images.slice(1, 5).map((image) => ({
+                url: image.url,
+                title: image.title,
+              }));
+
+        if (gallery.length === 0) return null;
+
+        return (
+          <section className="report-section report-gallery">
+            <div className="report-section-head">
+              <div>
+                <div className="report-kicker">THE PLACE TODAY</div>
+                <h2>See the places your family journey leads to today.</h2>
+              </div>
             </div>
-          </div>
-          <div className="report-image-grid">
-            {images.slice(1, 5).map((image, index) => (
-              <figure key={image.url + index}>
-                <img src={image.url} alt={image.title} loading="lazy" />
-                <figcaption>{image.title}</figcaption>
-              </figure>
-            ))}
-          </div>
-        </section>
-      )}
+            <div className="report-image-grid">
+              {gallery.map((image, index) => (
+                <figure key={image.url + index}>
+                  <img src={image.url} alt={image.title} loading="lazy" />
+                  <figcaption>{image.title}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {itinerary.length > 0 && (
         <section className="report-section report-itinerary-modern">
