@@ -1912,7 +1912,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
 
   const historicalComparisons = (report.historical_comparisons || [])
     .slice(0, 4)
-    .map((comparison) => {
+    .map(async (comparison) => {
       const normalizedComparisonName = normalizePlaceText(comparison.place_name);
       const exactPlace = placeByName.get(normalizedComparisonName);
 
@@ -1972,11 +1972,15 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     })
     .filter((comparison) => !!comparison.historical_image_url);
 
+  const hydratedHistoricalComparisons = await Promise.all(
+    historicalComparisons,
+  );
+
   return {
     ...report,
     places,
     images,
-    historical_comparisons: historicalComparisons,
+    historical_comparisons: hydratedHistoricalComparisons,
     traditions: Array.isArray(report.traditions)
       ? report.traditions.map((tradition) => ({
           ...tradition,
