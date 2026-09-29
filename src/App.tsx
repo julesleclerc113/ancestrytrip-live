@@ -144,17 +144,12 @@ function ReportExperience({
     return "RESEARCH LEAD";
   };
 
-  const placeImage = (place: ReportPlace) => {
-    if (place.image_url) return place.image_url;
-    const target = `${place.name} ${place.location}`.toLowerCase();
-    return images.find((image) => {
-      const text = `${image.title} ${image.source_url}`.toLowerCase();
-      return target
-        .split(/[^a-z0-9à-ÿ]+/i)
-        .filter((word) => word.length > 4)
-        .some((word) => text.includes(word));
-    })?.url;
-  };
+  const placeImage = (place: ReportPlace) => place.image_url;
+
+  const routeAnchorPoints = [
+    [60, 205], [178, 141], [315, 155], [435, 91], [561, 43],
+    [684, 102], [790, 192], [900, 185], [950, 55],
+  ];
 
   return (
     <>
@@ -275,17 +270,12 @@ function ReportExperience({
           </div>
           <div className="research-map-pins">
             {places.slice(0, 8).map((place, index) => {
-              const pinPositions = [
-                [60, 185],
-                [145, 135],
-                [240, 123],
-                [335, 117],
-                [500, 50],
-                [650, 80],
-                [790, 170],
-                [950, 35],
-              ];
-              const [x, y] = pinPositions[index] || pinPositions[pinPositions.length - 1];
+              const pointCount = Math.min(places.length, routeAnchorPoints.length);
+              const pointIndex =
+                pointCount <= 1
+                  ? 0
+                  : Math.round((index * (routeAnchorPoints.length - 1)) / (pointCount - 1));
+              const [x, y] = routeAnchorPoints[pointIndex];
               return (
                 <button
                   type="button"
