@@ -1970,11 +1970,11 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         current_image_url: currentImageUrl,
       };
     })
-    .filter((comparison) => !!comparison.historical_image_url);
+;
 
-  const hydratedHistoricalComparisons = await Promise.all(
-    historicalComparisons,
-  );
+  const hydratedHistoricalComparisons = (
+    await Promise.all(historicalComparisons)
+  ).filter((comparison) => !!comparison.historical_image_url);
 
   return {
     ...report,
