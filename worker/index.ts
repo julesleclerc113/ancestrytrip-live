@@ -64,6 +64,10 @@ interface ReportTradition {
   place: string;
   evidence: string;
   source_url?: string;
+  image_url?: string;
+  image_source_url?: string;
+  video_url?: string;
+  video_source_url?: string;
 }
 
 interface ReportItineraryDay {
@@ -940,7 +944,7 @@ Use only direct image URLs actually exposed by a consulted webpage, paired with 
 
 Also research 2–4 strong visual "then and now" comparisons. Prefer a specific place where an old photograph, historic map, or historic monument view can be compared with the same physical place today. Establish that the historical and current views refer to the same place. Explain what changed or survived. If no reliable historical visual exists, omit the comparison.
 
-Research 2–4 documented local traditions, habits, occupations, foods, celebrations, crafts, domestic practices, working practices, or other everyday customs relevant to the ancestral place. Prefer museum, archive, library, academic, municipal, ethnographic or historical-society sources. Distinguish documented history from modern tourism or folklore. Do not imply the customer's ancestors personally followed a tradition unless evidence establishes that.
+Research 2–4 documented local traditions, habits, occupations, foods, celebrations, crafts, domestic practices, working practices, or other everyday customs relevant to the ancestral place. Prefer museum, archive, library, academic, municipal, ethnographic or historical-society sources. Distinguish documented history from modern tourism or folklore. Do not imply the customer's ancestors personally followed a tradition unless evidence establishes that. When a consulted authoritative page also exposes a genuine historical photograph or documentary video of people performing that practice, preserve the direct media URL and its source page; media is optional and must never be invented.
 
 QUALITY GATES BEFORE OUTPUT
 
@@ -1054,7 +1058,11 @@ Return exactly one JSON object with these top-level fields and no others:
       "description": "What people did and how it worked.",
       "place": "Where it was practiced",
       "evidence": "The historical evidence supporting it.",
-      "source_url": "https://example.com/source"
+      "source_url": "https://example.com/source",
+      "image_url": "https://example.com/tradition-image.jpg",
+      "image_source_url": "https://example.com/source",
+      "video_url": "https://example.com/tradition-video.mp4",
+      "video_source_url": "https://example.com/source"
     }
   ]
 }
@@ -1064,8 +1072,8 @@ FIELD RULES
 - Use exactly these top-level field names.
 - "sources" must be an array of the most important sources actually consulted during the research.
 - "images" must be an array containing 2-4 representative images whenever the research pages expose usable images; do not leave it empty merely because the page is not itself an image file.
-- "historical_comparisons" should contain 2-4 strong, source-backed then-and-now comparisons when reliable historical visuals exist. Each comparison must refer to the same physical place.
-- "traditions" should contain 2-4 source-backed historical traditions, habits, occupations, foods, celebrations, crafts, domestic practices or working practices from the ancestral place. Do not personalize them to the customer's family unless directly evidenced.
+- "historical_comparisons" should contain at least 2 and ideally 2-4 strong, source-backed then-and-now comparisons whenever the researched place has reliable historical visuals. Do not stop at one comparison when a second distinct same-place comparison can be established. Each comparison must refer to the same physical place.
+- "traditions" should contain 2-4 source-backed historical traditions, habits, occupations, foods, celebrations, crafts, domestic practices or working practices from the ancestral place. Do not personalize them to the customer's family unless directly evidenced. A tradition may optionally include "image_url"/"image_source_url" or "video_url"/"video_source_url" only when that direct media was actually exposed by a consulted authoritative source.
 - Actively look for visual material while researching: official archive photographs, museum collections, heritage pages, municipal history pages, historic maps, churches, cemeteries, streets, ports, stations and landscapes that are directly relevant to the report.
 - Never invent an image URL. Only use a direct image URL actually present on a consulted webpage, such as an og:image, twitter:image, gallery image or image asset linked from that page, and pair it with the exact webpage URL in "source_url".
 - Provide a distinct image for every place in the "places" list whenever a real image can be found.
@@ -1761,28 +1769,71 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
   const historicalComparisons = (report.historical_comparisons || [])
     .slice(0, 4)
     .map((comparison) => {
-      const place = placeByName.get(
-        normalizePlaceText(comparison.place_name),
+      const normalizedComparisonName = normalizePlaceText(comparison.place_name);
+      const exactPlace = placeByName.get(normalizedComparisonName);
+
+      const place =
+        exactPlace ||
+        places.find((candidate) => {
+          const candidateName = normalizePlaceText(candidate.name);
+          const candidateLocation = normalizePlaceText(candidate.location);
+          const comparisonLocation = normalizePlaceText(comparison.location);
+          return (
+            (normalizedComparisonName.length >= 6 &&
+              candidateName.includes(normalizedComparisonName)) ||
+            (candidateName.length >= 6 &&
+              normalizedComparisonName.includes(candidateName)) ||
+            (comparisonLocation.length >= 6 &&
+              candidateLocation.includes(comparisonLocation)) ||
+            (candidateLocation.length >= 6 &&
+              comparisonLocation.includes(candidateLocation))
+          );
+        });
+
+      const historicalUrl =
+        typeof comparison.historical_image_url === "string" &&
+        /^https?:\/\//i.test(comparison.historical_image_url)
+          ? comparison.historical_image_url
+          : undefined;
+
+      const currentCandidates = [
+        comparison.current_image_url,
+        place?.image_url,
+        place?.image_fallback_url,
+      ].filter(
+        (url): url is string =>
+          typeof url === "string" && /^https?:\/\//i.test(url),
       );
 
       return {
         ...comparison,
-        current_image_url:
-          comparison.current_image_url || place?.image_url,
+        historical_image_url: historicalUrl,
+        current_image_url: currentCandidates[0],
       };
     })
-    .filter(
-      (comparison) =>
-        !!comparison.historical_image_url &&
-        /^https?:\/\//i.test(comparison.historical_image_url),
-    );
+    .filter((comparison) => !!comparison.historical_image_url);
 
   return {
     ...report,
     places,
     images,
     historical_comparisons: historicalComparisons,
-    image_hydration_version: 3,
+    traditions: Array.isArray(report.traditions)
+      ? report.traditions.map((tradition) => ({
+          ...tradition,
+          image_url:
+            typeof tradition.image_url === "string" &&
+            /^https?:\/\//i.test(tradition.image_url)
+              ? tradition.image_url
+              : undefined,
+          video_url:
+            typeof tradition.video_url === "string" &&
+            /^https?:\/\//i.test(tradition.video_url)
+              ? tradition.video_url
+              : undefined,
+        }))
+      : [],
+    image_hydration_version: 4,
   };
 }
 
@@ -2134,6 +2185,115 @@ async function geocodeReportPlace(
     }
   }
 
+  // Last map fallback: geocode the supplied location itself without requiring
+  // it to be a city. This is important for addresses such as "Bassin Bouvet,
+  // Saint-Malo" where the city-only locality lookup can fail.
+  if (location) {
+    try {
+      const fallbackParams = new URLSearchParams({
+        text: location,
+        limit: "10",
+        format: "json",
+        lang: "en",
+        apiKey,
+      });
+
+      if (countryCode) {
+        fallbackParams.set("filter", "countrycode:" + countryCode);
+      }
+
+      const fallbackResponse = await fetch(
+        "https://api.geoapify.com/v1/geocode/search?" + fallbackParams.toString(),
+        {
+          headers: {
+            "User-Agent": "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (fallbackResponse.ok) {
+        const fallbackData = (await fallbackResponse.json()) as {
+          results?: Array<{
+            lat?: number;
+            lon?: number;
+            name?: string;
+            formatted?: string;
+            city?: string;
+            county?: string;
+            state?: string;
+            rank?: { confidence?: number };
+          }>;
+        };
+
+        const locationPhrases = location
+          .split(",")
+          .map((part) => normalizePlaceText(part))
+          .filter(
+            (part) =>
+              part.length >= 3 &&
+              !["france", "francais", "francaise"].includes(part) &&
+              !/^\d+(?:\s*\d+)?$/.test(part),
+          );
+
+        let bestFallback:
+          | { latitude: number; longitude: number; score: number }
+          | null = null;
+
+        for (const result of fallbackData.results || []) {
+          const latitude = Number(result.lat);
+          const longitude = Number(result.lon);
+
+          if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180
+          ) {
+            continue;
+          }
+
+          const resultText = normalizePlaceText(
+            [
+              result.name,
+              result.formatted,
+              result.city,
+              result.county,
+              result.state,
+            ]
+              .filter(Boolean)
+              .join(" "),
+          );
+
+          const locationMatches = locationPhrases.filter((phrase) =>
+            resultText.includes(phrase),
+          ).length;
+          const confidence = Number(result.rank?.confidence) || 0;
+          const score =
+            locationMatches * 100 +
+            confidence * 20 +
+            (result.city ? 10 : 0);
+
+          if (!bestFallback || score > bestFallback.score) {
+            bestFallback = { latitude, longitude, score };
+          }
+        }
+
+        if (bestFallback) {
+          return {
+            latitude: bestFallback.latitude,
+            longitude: bestFallback.longitude,
+          };
+        }
+      }
+    } catch {
+      // Keep the earlier locality fallback if the final lookup fails.
+    }
+  }
+
   return locationFallback;
 }
 async function hydrateReportMapCoordinates(
@@ -2185,7 +2345,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 8 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 9 : report.map_coordinates_version,
     places,
   };
 }
@@ -3158,7 +3318,7 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 2 ||
+        reportContent.image_hydration_version !== 4 ||
         reportContent.places.some((place) => !place.image_url);
 
       if (needsImageHydration) {
