@@ -1391,6 +1391,144 @@ async function extractOgImage(source: ReportSource) {
   }
 }
 
+async function findFallbackPlaceImage(
+  place: ReportPlace,
+  usedImageUrls: Set<string>,
+): Promise<string | null> {
+  const name = place.name?.trim() || "";
+  const location = place.location?.trim() || "";
+
+  if (!name && !location) return null;
+
+  const queries = Array.from(
+    new Set(
+      [
+        [name, location].filter(Boolean).join(" "),
+        name,
+      ].filter(Boolean),
+    ),
+  );
+
+  for (const query of queries) {
+    try {
+      const params = new URLSearchParams({
+        action: "query",
+        generator: "search",
+        gsrsearch: query,
+        gsrnamespace: "6",
+        gsrlimit: "10",
+        prop: "imageinfo",
+        iiprop: "url|size|mime",
+        format: "json",
+        origin: "*",
+      });
+
+      const response = await fetch(
+        "https://commons.wikimedia.org/w/api.php?" +
+          params.toString(),
+        {
+          headers: {
+            "User-Agent":
+              "AncestryTrip/1.0 (+https://ancestrytrip.com)",
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+
+      if (!response.ok) continue;
+
+      const data = (await response.json()) as {
+        query?: {
+          pages?: Record<
+            string,
+            {
+              title?: string;
+              imageinfo?: Array<{
+                url?: string;
+                width?: number;
+                height?: number;
+                mime?: string;
+              }>;
+            }
+          >;
+        };
+      };
+
+      const candidates = Object.values(
+        data.query?.pages || {},
+      )
+        .flatMap((page) => {
+          const info = page.imageinfo?.[0];
+          if (!info?.url) return [];
+
+          const title = (page.title || "")
+            .replace(/^File:/i, "")
+            .replace(/\.[a-z0-9]+$/i, "");
+
+          const normalizedTitle = normalizePlaceText(title);
+          const normalizedName = normalizePlaceText(name);
+          const normalizedLocation = normalizePlaceText(location);
+
+          const nameTokens = placeTokens(name);
+          const titleTokens = new Set(placeTokens(title));
+          const nameMatches = nameTokens.filter((token) =>
+            titleTokens.has(token),
+          ).length;
+          const nameCoverage = nameTokens.length
+            ? nameMatches / nameTokens.length
+            : 0;
+          const locationMatches = normalizedLocation
+            ? normalizedTitle.includes(normalizedLocation)
+              ? 1
+              : 0
+            : 0;
+
+          const exactName =
+            normalizedName.length > 0 &&
+            normalizedTitle.includes(normalizedName);
+
+          return [{
+            url: info.url,
+            width: Number(info.width) || 0,
+            height: Number(info.height) || 0,
+            mime: info.mime || "",
+            score:
+              (exactName ? 200 : 0) +
+              nameCoverage * 100 +
+              locationMatches * 60 +
+              Math.min(
+                (Number(info.width) || 0) / 20,
+                100,
+              ),
+          }];
+        })
+        .filter(
+          (candidate) =>
+            /^https?:\/\//i.test(candidate.url) &&
+            !usedImageUrls.has(candidate.url),
+        )
+        .sort((a, b) => b.score - a.score);
+
+      for (const candidate of candidates.slice(0, 5)) {
+        if (
+          await isUsableImageUrl(candidate.url, {
+            minimumBytes: 140000,
+            minimumWidth: 1000,
+            minimumHeight: 650,
+          })
+        ) {
+          return candidate.url;
+        }
+      }
+    } catch {
+      // Try the next query/source.
+    }
+  }
+
+  return null;
+}
+
 async function hydrateReportImages(report: HeritageReport): Promise<HeritageReport> {
   const images: ReportImage[] = [];
   const seenImageUrls = new Set<string>();
@@ -1453,13 +1591,42 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       place.image_url &&
       /^https?:\/\//i.test(place.image_url) &&
       !usedPlaceImages.has(place.image_url) &&
-      await isUsableImageUrl(place.image_url, { minimumBytes: 140000, minimumWidth: 1000, minimumHeight: 650 })
+      await isUsableImageUrl(place.image_url, {
+        minimumBytes: 140000,
+        minimumWidth: 1000,
+        minimumHeight: 650,
+      })
     ) {
       usedPlaceImages.add(place.image_url);
       places.push(place);
+      continue;
+    }
+
+    const fallbackImageUrl = await findFallbackPlaceImage(
+      place,
+      usedPlaceImages,
+    );
+
+    if (fallbackImageUrl) {
+      usedPlaceImages.add(fallbackImageUrl);
+      places.push({
+        ...place,
+        image_url: fallbackImageUrl,
+      });
+      continue;
+    }
+
+    // Keep the original image as a last-resort visual rather than leaving
+    // the location card blank. The normal image validation above remains the
+    // quality gate for preferred images and the fallback search keeps trying
+    // other location-specific sources first.
+    if (place.image_url && /^https?:\/\//i.test(place.image_url)) {
+      places.push(place);
     } else {
-      const { image_url: _discarded, ...withoutImage } = place;
-      places.push(withoutImage);
+      places.push({
+        ...place,
+        image_url: undefined,
+      });
     }
   }
 
