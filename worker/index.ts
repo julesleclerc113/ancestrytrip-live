@@ -1457,6 +1457,7 @@ async function extractOgImage(source: ReportSource) {
 async function findFallbackPlaceImage(
   place: ReportPlace,
   usedImageUrls: Set<string>,
+  options: { minimumWidth?: number; minimumHeight?: number; minimumBytes?: number } = {},
 ): Promise<string | null> {
   const name = place.name?.trim() || "";
   const location = place.location?.trim() || "";
@@ -1467,10 +1468,16 @@ async function findFallbackPlaceImage(
     new Set(
       [
         [name, location].filter(Boolean).join(" "),
+        [location, name].filter(Boolean).join(" "),
         name,
+        location,
       ].filter(Boolean),
     ),
   );
+
+  const minimumBytes = options.minimumBytes ?? 100000;
+  const minimumWidth = options.minimumWidth ?? 800;
+  const minimumHeight = options.minimumHeight ?? 500;
 
   // Prefer exact Wikimedia Commons categories for named places. These categories
   // are especially reliable for landmarks and transport sites.
@@ -1522,9 +1529,9 @@ async function findFallbackPlaceImage(
 
       for (const candidate of candidates.slice(0, 8)) {
         if (await isUsableImageUrl(candidate.url, {
-          minimumBytes: 140000,
-          minimumWidth: 1000,
-          minimumHeight: 650,
+          minimumBytes,
+          minimumWidth,
+          minimumHeight,
         })) {
           return candidate.url;
         }
@@ -1745,6 +1752,11 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     const fallbackImageUrl = await findFallbackPlaceImage(
       place,
       usedPlaceImages,
+      {
+        minimumBytes: 100000,
+        minimumWidth: 800,
+        minimumHeight: 500,
+      },
     );
 
     if (fallbackImageUrl) {
@@ -1756,9 +1768,50 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
       continue;
     }
 
+    // Keep the report visually complete even when Wikimedia has no large
+    // exact match: retry with a smaller but still useful local photograph.
+    const relaxedFallback = await findFallbackPlaceImage(
+      place,
+      usedPlaceImages,
+      {
+        minimumBytes: 50000,
+        minimumWidth: 640,
+        minimumHeight: 400,
+      },
+    );
+
+    if (relaxedFallback) {
+      usedPlaceImages.add(relaxedFallback);
+      places.push({
+        ...place,
+        image_url: relaxedFallback,
+      });
+      continue;
+    }
+
+    // Do not leave an empty card when a source page already exposes a usable
+    // visual. We use the report's consulted pages as a final evidence-backed
+    // image source before accepting that no visual exists.
+    let sourceImage: string | null = null;
+    for (const source of report.sources || []) {
+      const sourceText = normalizePlaceText([source.title, source.url].join(" "));
+      const placeTokensForSource = placeTokens(place.name);
+      const relevant = placeTokensForSource.length === 0
+        ? false
+        : placeTokensForSource.filter((token) => sourceText.includes(token)).length >= Math.min(2, placeTokensForSource.length);
+
+      if (!relevant) continue;
+
+      const candidate = await extractOgImage(source);
+      if (candidate && !usedPlaceImages.has(candidate)) {
+        sourceImage = candidate;
+        break;
+      }
+    }
+
     places.push({
       ...place,
-      image_url: undefined,
+      image_url: sourceImage || undefined,
     });
   }
 
@@ -1797,18 +1850,33 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
           : undefined;
 
       const currentCandidates = [
-        comparison.current_image_url,
         place?.image_url,
         place?.image_fallback_url,
+        comparison.current_image_url,
       ].filter(
         (url): url is string =>
           typeof url === "string" && /^https?:\/\//i.test(url),
       );
 
+      let currentImageUrl: string | undefined;
+
+      for (const candidate of currentCandidates) {
+        if (
+          await isUsableImageUrl(candidate, {
+            minimumBytes: 100000,
+            minimumWidth: 800,
+            minimumHeight: 500,
+          })
+        ) {
+          currentImageUrl = candidate;
+          break;
+        }
+      }
+
       return {
         ...comparison,
         historical_image_url: historicalUrl,
-        current_image_url: currentCandidates[0],
+        current_image_url: currentImageUrl,
       };
     })
     .filter((comparison) => !!comparison.historical_image_url);
