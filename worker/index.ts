@@ -1800,3 +1800,1025 @@ async function verifyStripeWebhookSignature(
 
   let timestamp = "";
   const signatures: string[] = [];
+
+  for (const part of parts) {
+    const [key, value] = part.split("=", 2);
+
+    if (key === "t") {
+      timestamp = value;
+    }
+
+    if (key === "v1" && value) {
+      signatures.push(value);
+    }
+  }
+
+  if (!timestamp || signatures.length === 0) {
+    return false;
+  }
+
+  const timestampNumber = Number(timestamp);
+
+  if (!Number.isFinite(timestampNumber)) {
+    return false;
+  }
+
+  const age = Math.abs(Date.now() / 1000 - timestampNumber);
+
+  if (age > 300) {
+    return false;
+  }
+
+  const signedPayload = `${timestamp}.${payload}`;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    {
+      name: "HMAC",
+      hash: "SHA-256",
+    },
+    false,
+    ["verify"],
+  );
+
+  for (const signature of signatures) {
+    if (!/^[0-9a-fA-F]+$/.test(signature)) {
+      continue;
+    }
+
+    const hexBytes =
+      signature.match(/.{1,2}/g) || [];
+
+    const bytes = new Uint8Array(
+      hexBytes.map((byte) =>
+        parseInt(byte, 16),
+      ),
+    );
+
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      bytes,
+      new TextEncoder().encode(signedPayload),
+    );
+
+    if (valid) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function createStripeCheckout(
+  request: Request,
+  env: Env,
+  tripId: string,
+  product: keyof typeof PRODUCTS,
+  email: string,
+) {
+  const selected = PRODUCTS[product];
+  const url = new URL(request.url);
+
+  const successUrl =
+    `${url.origin}/success` +
+    `?session_id={CHECKOUT_SESSION_ID}` +
+    `&trip_id=${encodeURIComponent(tripId)}` +
+    `&product=${encodeURIComponent(product)}`;
+
+  const cancelUrl = `${url.origin}/#preview`;
+
+  const body = new URLSearchParams();
+
+  body.set("mode", "payment");
+  body.set("managed_payments[enabled]", "false");
+  body.set("customer_email", email);
+  body.set("client_reference_id", tripId);
+  body.set("line_items[0][price]", selected.priceId);
+  body.set("line_items[0][quantity]", "1");
+  body.set("success_url", successUrl);
+  body.set("cancel_url", cancelUrl);
+  body.set("metadata[trip_id]", tripId);
+  body.set("metadata[product]", product);
+
+  const stripeResponse = await fetch(
+    "https://api.stripe.com/v1/checkout/sessions",
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Basic ${btoa(`${env.STRIPE_SECRET_KEY}:`)}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    },
+  );
+
+  const stripeData = (await stripeResponse.json()) as StripeSession & {
+    error?: {
+      message?: string;
+    };
+  };
+
+  if (!stripeResponse.ok || !stripeData.url) {
+    console.error("Stripe Checkout creation failed:", stripeData);
+
+    throw new Error(
+      stripeData.error?.message ||
+        "Stripe could not create the checkout session.",
+    );
+  }
+
+  await env.DB.prepare(`
+    INSERT INTO ancestry_payments (
+      id,
+      trip_id,
+      stripe_session_id,
+      product,
+      amount_cents,
+      currency,
+      payment_status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `)
+    .bind(
+      crypto.randomUUID().replaceAll("-", ""),
+      tripId,
+      stripeData.id,
+      product,
+      selected.amountCents,
+      "eur",
+      "pending",
+    )
+    .run();
+
+  return {
+    checkoutUrl: stripeData.url,
+    sessionId: stripeData.id,
+  };
+}
+
+async function getPaidCheckout(
+  env: Env,
+  sessionId: string,
+) {
+  const stripeResponse = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization:
+          `Basic ${btoa(`${env.STRIPE_SECRET_KEY}:`)}`,
+      },
+    },
+  );
+
+  const session = (await stripeResponse.json()) as StripeSession & {
+    error?: {
+      message?: string;
+    };
+  };
+
+  if (!stripeResponse.ok) {
+    throw new Error(
+      session.error?.message ||
+        "Unable to verify the Stripe checkout session.",
+    );
+  }
+
+  const payment = await env.DB.prepare(`
+    SELECT
+      id,
+      trip_id,
+      product,
+      amount_cents,
+      currency,
+      payment_status
+    FROM ancestry_payments
+    WHERE stripe_session_id = ?
+    LIMIT 1
+  `)
+    .bind(sessionId)
+    .first<{
+      id: string;
+      trip_id: string;
+      product: string;
+      amount_cents: number;
+      currency: string;
+      payment_status: string;
+    }>();
+
+  if (!payment) {
+    throw new Error("Payment record not found.");
+  }
+
+  if (session.metadata?.trip_id !== payment.trip_id) {
+    throw new Error("Payment does not match this trip.");
+  }
+
+  if (session.metadata?.product !== payment.product) {
+    throw new Error("Payment product does not match.");
+  }
+
+  const isPaid =
+    session.status === "complete" &&
+    session.payment_status === "paid";
+
+  if (!isPaid) {
+    return {
+      paid: false as const,
+      status: session.payment_status || "unpaid",
+      product: payment.product,
+    };
+  }
+
+  if (
+    session.amount_total !== payment.amount_cents ||
+    session.currency?.toLowerCase() !==
+      payment.currency.toLowerCase()
+  ) {
+    throw new Error("Payment amount or currency does not match.");
+  }
+
+  await env.DB.prepare(`
+    UPDATE ancestry_payments
+    SET payment_status = 'paid'
+    WHERE id = ?
+      AND payment_status IN ('pending', 'paid')
+  `)
+    .bind(payment.id)
+    .run();
+
+  return {
+    paid: true as const,
+    paymentId: payment.id,
+    product: payment.product,
+    amountCents: payment.amount_cents,
+    email: session.customer_email,
+    tripId: payment.trip_id,
+  };
+}
+
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function sendReportReadyEmail(
+  env: Env,
+  paymentId: string,
+  reportId: string,
+  origin: string,
+) {
+  const claim = await env.DB.prepare(`
+    UPDATE ancestry_payments
+    SET email_status = 'sending',
+        email_error = NULL
+    WHERE id = ?
+      AND payment_status = 'fulfilled'
+      AND email_status IN ('pending', 'failed')
+  `)
+    .bind(paymentId)
+    .run();
+
+  if (!claim.meta.changes) {
+    return;
+  }
+
+  try {
+    const payment = await env.DB.prepare(`
+      SELECT
+        p.product,
+        t.email,
+        t.first_name,
+        t.last_name
+      FROM ancestry_payments p
+      INNER JOIN ancestry_trips t
+        ON t.id = p.trip_id
+      WHERE p.id = ?
+      LIMIT 1
+    `)
+      .bind(paymentId)
+      .first<{
+        product: string;
+        email: string;
+        first_name: string | null;
+        last_name: string | null;
+      }>();
+
+    if (!payment) {
+      throw new Error("Payment record not found for email delivery.");
+    }
+
+    if (!env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured.");
+    }
+
+    const customerName =
+      [payment.first_name, payment.last_name]
+        .filter(Boolean)
+        .join(" ") || "there";
+
+    const reportUrl =
+      `${origin}/report/${encodeURIComponent(reportId)}`;
+
+    const productName =
+      payment.product === "deep"
+        ? "Deep Heritage Trip"
+        : "Heritage Trip";
+
+    const resendResponse = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `report-ready/${paymentId}`,
+        },
+        body: JSON.stringify({
+          from:
+            "AncestryTrip <onboarding@resend.dev>",
+          to: [payment.email],
+          subject:
+            "Your AncestryTrip heritage journey is ready",
+          html: `
+            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f1f1f;max-width:640px;margin:0 auto;padding:32px 20px">
+              <p style="font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6f6f6f">ANCESTRYTRIP</p>
+              <h1 style="font-family:Georgia,serif;font-weight:500;font-size:34px;line-height:1.15">Your heritage journey is ready.</h1>
+              <p>Hello ${escapeHtml(customerName)},</p>
+              <p>Your ${escapeHtml(productName)} report has been researched and is ready to read.</p>
+              <p><a href="${escapeHtml(reportUrl)}" style="display:inline-block;background:#1f1f1f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:4px">Open my report</a></p>
+              <p style="font-size:14px;color:#666">You can return to this link whenever you want to revisit your report.</p>
+              <p style="font-family:Georgia,serif">AncestryTrip<br><span style="font-family:Arial,sans-serif;font-size:14px;color:#666">Turn your family history into a journey.</span></p>
+            </div>
+          `,
+        }),
+      },
+    );
+
+    if (!resendResponse.ok) {
+      const errorText = await resendResponse.text();
+      throw new Error(
+        `Resend rejected the email: ${resendResponse.status} ${errorText.slice(0, 500)}`,
+      );
+    }
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET email_status = 'sent',
+          email_sent_at = CURRENT_TIMESTAMP,
+          email_error = NULL
+      WHERE id = ?
+    `)
+      .bind(paymentId)
+      .run();
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown email delivery error.";
+
+    console.error("Report email delivery failed:", message);
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET email_status = 'failed',
+          email_error = ?
+      WHERE id = ?
+        AND email_status = 'sending'
+    `)
+      .bind(message.slice(0, 1000), paymentId)
+      .run();
+  }
+}
+
+async function generateReportForPayment(
+  env: Env,
+  paymentId: string,
+  origin: string,
+) {
+  const claim = await env.DB.prepare(`
+    UPDATE ancestry_payments
+    SET payment_status = 'generating'
+    WHERE id = ?
+      AND payment_status = 'paid'
+  `)
+    .bind(paymentId)
+    .run();
+
+  if (!claim.meta.changes) {
+    return;
+  }
+
+  try {
+    const payment = await env.DB.prepare(`
+      SELECT
+        id,
+        trip_id,
+        product
+      FROM ancestry_payments
+      WHERE id = ?
+      LIMIT 1
+    `)
+      .bind(paymentId)
+      .first<{
+        id: string;
+        trip_id: string;
+        product: string;
+      }>();
+
+    if (!payment) {
+      throw new Error("Payment record not found while generating report.");
+    }
+
+    const existingReport = await env.DB.prepare(`
+      SELECT id
+      FROM ancestry_reports
+      WHERE payment_id = ?
+      LIMIT 1
+    `)
+      .bind(payment.id)
+      .first<{ id: string }>();
+
+    if (existingReport) {
+      await env.DB.prepare(`
+        UPDATE ancestry_payments
+        SET payment_status = 'fulfilled'
+        WHERE id = ?
+      `)
+        .bind(payment.id)
+        .run();
+
+      await sendReportReadyEmail(
+        env,
+        payment.id,
+        existingReport.id,
+        origin,
+      );
+      return;
+    }
+
+    const trip = await env.DB.prepare(`
+      SELECT
+        first_name,
+        last_name,
+        email,
+        ancestral_place,
+        birth_year,
+        birth_place,
+        notes
+      FROM ancestry_trips
+      WHERE id = ?
+      LIMIT 1
+    `)
+      .bind(payment.trip_id)
+      .first<{
+        first_name: string | null;
+        last_name: string | null;
+        email: string;
+        ancestral_place: string;
+        birth_year: number | null;
+        birth_place: string | null;
+        notes: string | null;
+      }>();
+
+    if (!trip) {
+      throw new Error("Trip record not found.");
+    }
+
+    const product =
+      payment.product === "deep"
+        ? "deep"
+        : "heritage";
+
+    const report = await generateHeritageReport(
+      env,
+      trip,
+      product,
+    );
+
+    const reportId = crypto.randomUUID().replaceAll("-", "");
+
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO ancestry_reports (
+        id,
+        trip_id,
+        payment_id,
+        content_json
+      )
+      VALUES (?, ?, ?, ?)
+    `)
+      .bind(
+        reportId,
+        payment.trip_id,
+        payment.id,
+        JSON.stringify(report),
+      )
+      .run();
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'fulfilled'
+      WHERE id = ?
+    `)
+      .bind(payment.id)
+      .run();
+
+    const storedReport = await env.DB.prepare(`
+      SELECT id
+      FROM ancestry_reports
+      WHERE payment_id = ?
+      LIMIT 1
+    `)
+      .bind(payment.id)
+      .first<{ id: string }>();
+
+    if (!storedReport) {
+      throw new Error("Report was not stored after generation.");
+    }
+
+    await sendReportReadyEmail(
+      env,
+      payment.id,
+      storedReport.id,
+      origin,
+    );
+  } catch (error) {
+    console.error(
+      "Background report generation failed:",
+      error,
+    );
+
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'paid'
+      WHERE id = ?
+        AND payment_status = 'generating'
+    `)
+      .bind(paymentId)
+      .run();
+  }
+}
+
+async function verifyStripeCheckout(
+  env: Env,
+  sessionId: string,
+  ctx: ExecutionContext,
+  origin: string,
+) {
+  const checkout = await getPaidCheckout(
+    env,
+    sessionId,
+  );
+
+  if (!checkout.paid) {
+    return checkout;
+  }
+
+  const existingReport = await env.DB.prepare(`
+    SELECT id, content_json
+    FROM ancestry_reports
+    WHERE payment_id = ?
+    LIMIT 1
+  `)
+    .bind(checkout.paymentId)
+    .first<{
+      id: string;
+      content_json: string;
+    }>();
+
+  if (existingReport) {
+    await env.DB.prepare(`
+      UPDATE ancestry_payments
+      SET payment_status = 'fulfilled'
+      WHERE id = ?
+    `)
+      .bind(checkout.paymentId)
+      .run();
+
+    await sendReportReadyEmail(
+      env,
+      checkout.paymentId,
+      existingReport.id,
+      origin,
+    );
+
+    return {
+      ...checkout,
+      reportId: existingReport.id,
+      report: JSON.parse(existingReport.content_json),
+      reportStatus: "ready",
+    };
+  }
+
+  ctx.waitUntil(
+    generateReportForPayment(
+      env,
+      checkout.paymentId,
+      origin,
+    ),
+  );
+
+  return {
+    ...checkout,
+    reportStatus: "generating",
+  };
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/api" || url.pathname === "/api/") {
+      return json({
+        name: "AncestryTrip",
+        status: "online",
+      });
+    }
+
+    if (url.pathname === "/api/health") {
+      const result = await env.DB
+        .prepare("SELECT 1 AS ok")
+        .first<{ ok: number }>();
+
+      return json({
+        status:
+          result?.ok === 1 ? "healthy" : "degraded",
+        database: result?.ok === 1,
+      });
+    }
+
+    if (
+      url.pathname === "/api/preview" &&
+      request.method === "POST"
+    ) {
+      let input: TripInput;
+
+      try {
+        input = (await request.json()) as TripInput;
+      } catch {
+        return json(
+          { error: "Invalid JSON request." },
+          400,
+        );
+      }
+
+      if (!input.email?.trim()) {
+        return json(
+          { error: "Email is required." },
+          400,
+        );
+      }
+
+      if (!input.ancestralPlace?.trim()) {
+        return json(
+          { error: "An ancestral place is required." },
+          400,
+        );
+      }
+
+      const tripId = crypto
+        .randomUUID()
+        .replaceAll("-", "");
+
+      const preview = buildPreview(input);
+
+      await env.DB.prepare(`
+        INSERT INTO ancestry_trips (
+          id,
+          email,
+          first_name,
+          last_name,
+          birth_year,
+          birth_place,
+          ancestral_place,
+          notes,
+          preview_json
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+        .bind(
+          tripId,
+          input.email.trim(),
+          input.firstName?.trim() || null,
+          input.lastName?.trim() || null,
+          input.birthYear || null,
+          input.birthPlace?.trim() || null,
+          input.ancestralPlace.trim(),
+          input.notes?.trim() || null,
+          JSON.stringify(preview),
+        )
+        .run();
+
+      return json({
+        tripId,
+        preview,
+      });
+    }
+
+    if (
+      url.pathname === "/api/stripe/webhook" &&
+      request.method === "POST"
+    ) {
+      const signature = request.headers.get("Stripe-Signature");
+
+      if (!signature) {
+        return json(
+          { error: "Missing Stripe-Signature header." },
+          400,
+        );
+      }
+
+      const payload = await request.text();
+
+      const validSignature =
+        await verifyStripeWebhookSignature(
+          payload,
+          signature,
+          env.STRIPE_WEBHOOK_SECRET,
+        );
+
+      if (!validSignature) {
+        return json(
+          { error: "Invalid webhook signature." },
+          400,
+        );
+      }
+
+      let event: {
+        type: string;
+        data?: {
+          object?: {
+            id?: string;
+          };
+        };
+      };
+
+      try {
+        event = JSON.parse(payload);
+      } catch {
+        return json(
+          { error: "Invalid webhook payload." },
+          400,
+        );
+      }
+
+      const supportedEvents = [
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+      ];
+
+      if (!supportedEvents.includes(event.type)) {
+        return json({ received: true });
+      }
+
+      const sessionId = event.data?.object?.id;
+
+      if (!sessionId) {
+        return json(
+          { error: "Webhook event has no Checkout Session ID." },
+          400,
+        );
+      }
+
+      try {
+        const checkout = await getPaidCheckout(env, sessionId);
+
+        if (checkout.paid) {
+          ctx.waitUntil(
+            generateReportForPayment(
+              env,
+              checkout.paymentId,
+              url.origin,
+            ),
+          );
+        }
+
+        return json({ received: true });
+      } catch (error) {
+        console.error(
+          "Webhook fulfillment error:",
+          error,
+        );
+
+        return json(
+          { error: "Fulfillment failed." },
+          500,
+        );
+      }
+    }
+
+    if (
+      url.pathname === "/api/checkout" &&
+      request.method === "POST"
+    ) {
+      let input: CheckoutRequest;
+
+      try {
+        input = (await request.json()) as CheckoutRequest;
+      } catch {
+        return json(
+          { error: "Invalid JSON request." },
+          400,
+        );
+      }
+
+      if (!input.tripId) {
+        return json(
+          { error: "Trip ID is required." },
+          400,
+        );
+      }
+
+      if (!PRODUCTS[input.product]) {
+        return json(
+          { error: "Invalid product." },
+          400,
+        );
+      }
+
+      const trip = await env.DB.prepare(`
+        SELECT id, email
+        FROM ancestry_trips
+        WHERE id = ?
+        LIMIT 1
+      `)
+        .bind(input.tripId)
+        .first<{
+          id: string;
+          email: string;
+        }>();
+
+      if (!trip) {
+        return json(
+          { error: "Trip not found." },
+          404,
+        );
+      }
+
+      try {
+        const checkout =
+          await createStripeCheckout(
+            request,
+            env,
+            trip.id,
+            input.product,
+            trip.email,
+          );
+
+        return json(checkout);
+      } catch (error) {
+        console.error("Checkout error:", error);
+
+        return json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to start checkout.",
+          },
+          502,
+        );
+      }
+    }
+
+    if (
+      url.pathname.startsWith("/api/reports/") &&
+      request.method === "GET"
+    ) {
+      const reportId = url.pathname.slice("/api/reports/".length);
+
+      if (!/^[a-f0-9-]{32,36}$/i.test(reportId)) {
+        return json({ error: "Invalid report ID." }, 400);
+      }
+
+      const report = await env.DB.prepare(`
+        SELECT
+          r.id,
+          r.content_json,
+          p.product,
+          p.amount_cents,
+          p.payment_status
+        FROM ancestry_reports r
+        INNER JOIN ancestry_payments p
+          ON p.id = r.payment_id
+        WHERE r.id = ?
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first<{
+          id: string;
+          content_json: string;
+          product: string;
+          amount_cents: number;
+          payment_status: string;
+        }>();
+
+      if (!report || report.payment_status !== "fulfilled") {
+        return json({ error: "Report not found." }, 404);
+      }
+
+      let reportContent: HeritageReport;
+
+      try {
+        reportContent = JSON.parse(report.content_json) as HeritageReport;
+      } catch {
+        return json({ error: "Stored report is invalid." }, 500);
+      }
+
+      // Older reports may have been generated before map coordinates were stored.
+      // Enrich them once on first view; later marker clicks use the stored coordinates.
+      try {
+        const enrichedReport = await hydrateReportMapCoordinates(env, reportContent);
+
+        if (
+      JSON.stringify(enrichedReport.places) !== JSON.stringify(reportContent.places) ||
+      enrichedReport.map_coordinates_version !== reportContent.map_coordinates_version
+    ) {
+          reportContent = enrichedReport;
+
+          await env.DB.prepare(`
+            UPDATE ancestry_reports
+            SET content_json = ?
+            WHERE id = ?
+          `)
+            .bind(JSON.stringify(reportContent), reportId)
+            .run();
+        }
+      } catch {
+        // The report remains usable if map enrichment is temporarily unavailable.
+      }
+
+      // Older reports may have been generated before image hydration existed.
+      // Refresh their imagery on first view so existing paid reports benefit too.
+      if (!Array.isArray(reportContent.images) || reportContent.images.length === 0) {
+        try {
+          reportContent = await hydrateReportImages(reportContent);
+        } catch {
+          // The report itself remains available even if image enrichment fails.
+        }
+      }
+
+      return json({
+        reportId: report.id,
+        report: reportContent,
+        product: report.product,
+        amountCents: report.amount_cents,
+      });
+    }
+
+    if (
+      url.pathname === "/api/checkout/verify" &&
+      request.method === "GET"
+    ) {
+      const sessionId =
+        url.searchParams.get("session_id");
+
+      if (!sessionId) {
+        return json(
+          {
+            error:
+              "Stripe session ID is required.",
+          },
+          400,
+        );
+      }
+
+      try {
+        const result =
+          await verifyStripeCheckout(
+            env,
+            sessionId,
+            ctx,
+            url.origin,
+          );
+
+        return json(result);
+      } catch (error) {
+        console.error(
+          "Payment verification error:",
+          error,
+        );
+
+        return json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to verify payment.",
+          },
+          400,
+        );
+      }
+    }
+
+    return env.ASSETS.fetch(request);
+  },
+} satisfies ExportedHandler<Env>;
