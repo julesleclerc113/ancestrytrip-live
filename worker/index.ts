@@ -1436,15 +1436,17 @@ async function geocodeReportPlace(
   );
 
   const queries: Array<{ text: string; type?: string }> = [
-    // Search the literal place name first. Editorial report titles can contain
-    // extra descriptive wording that hurts geocoding accuracy.
-    ...nameCandidates.map((candidate) => ({
-      text: candidate,
-    })),
+    // Constrain named places by their supplied locality first. This prevents
+    // a generic exact-name match elsewhere in France from winning.
     ...nameCandidates.map((candidate) => ({
       text: [candidate, location, "France"]
         .filter(Boolean)
         .join(", "),
+    })),
+    // Then try the literal name as a discovery fallback, but an exact-name
+    // result is only accepted if it also matches the supplied locality below.
+    ...nameCandidates.map((candidate) => ({
+      text: candidate,
     })),
     {
       text: [location, "France"].filter(Boolean).join(", "),
@@ -1511,6 +1513,7 @@ async function geocodeReportPlace(
             formatted: string;
             resultType: string;
             confidence: number;
+            locationMatches: number;
           }
         | null = null;
 
@@ -1522,7 +1525,16 @@ async function geocodeReportPlace(
         ) || name;
 
       const candidateTokens = placeTokens(candidateName);
-      const locationTokens = placeTokens(location);
+      // Country is already constrained by Geoapify's filter, so it must not
+      // count as evidence that the result is in the requested locality.
+      const locationTokens = placeTokens(location).filter(
+        (token) =>
+          ![
+            "france",
+            "francais",
+            "francaise",
+          ].includes(token),
+      );
 
       for (const result of data.results || []) {
         const latitude = Number(result?.lat);
@@ -1605,16 +1617,25 @@ async function geocodeReportPlace(
             formatted: result.formatted || "",
             resultType: result.result_type || "",
             confidence,
+            locationMatches,
           };
         }
       }
 
-      // A literal place-name match is the strongest signal. This is what
-      // prevents an editorial title from resolving to a nearby city centroid.
-      if (best?.exactName) {
+      // Exact names are not sufficient on their own. A generic name such as
+      // "Cathédrale Saint-Vincent" can exist in multiple French cities.
+      // When a locality was supplied, at least one meaningful locality token
+      // must also be present in the geocoder result.
+      const hasLocationContext = locationTokens.length > 0;
+      const exactNameMatchesLocation =
+        best?.exactName &&
+        (!hasLocationContext ||
+          best.locationMatches > 0);
+
+      if (exactNameMatchesLocation) {
         return {
-          latitude: best.latitude,
-          longitude: best.longitude,
+          latitude: best!.latitude,
+          longitude: best!.longitude,
         };
       }
 
@@ -1657,7 +1678,7 @@ async function hydrateReportMapCoordinates(
 
   if (!hasPlaces) return report;
 
-  const forceRegeocode = report.map_coordinates_version !== 6;
+  const forceRegeocode = report.map_coordinates_version !== 7;
 
   const places = await Promise.all(
     report.places.map(async (place) => {
@@ -1695,7 +1716,7 @@ async function hydrateReportMapCoordinates(
 
   return {
     ...report,
-    map_coordinates_version: apiKey ? 6 : report.map_coordinates_version,
+    map_coordinates_version: apiKey ? 7 : report.map_coordinates_version,
     places,
   };
 }
