@@ -1645,6 +1645,7 @@ async function geocodeReportPlace(
         best &&
         candidateTokens.length > 0 &&
         candidateTokens.length >= 2 &&
+        best.locationMatches > 0 &&
         best.score >= 100
       ) {
         return {
