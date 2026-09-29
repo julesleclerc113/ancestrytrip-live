@@ -1645,9 +1645,9 @@ async function findFallbackPlaceImage(
       for (const candidate of candidates.slice(0, 5)) {
         if (
           await isUsableImageUrl(candidate.url, {
-            minimumBytes: 140000,
-            minimumWidth: 1000,
-            minimumHeight: 650,
+            minimumBytes,
+            minimumWidth,
+            minimumHeight,
           })
         ) {
           return candidate.url;
@@ -1901,7 +1901,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
               : undefined,
         }))
       : [],
-    image_hydration_version: 4,
+    image_hydration_version: 5,
   };
 }
 
@@ -3386,7 +3386,7 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 4 ||
+        reportContent.image_hydration_version !== 5 ||
         reportContent.places.some((place) => !place.image_url);
 
       if (needsImageHydration) {
