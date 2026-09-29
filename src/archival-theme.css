@@ -1887,3 +1887,149 @@
     text-align: center;
   }
 }
+
+
+/* Then-and-now historical comparisons and documented traditions. */
+.site-shell.success-page .journey-image-frame {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: var(--at-navy);
+}
+.site-shell.success-page .journey-image-frame img,
+.site-shell.success-page .journey-image-frame .journey-image-placeholder {
+  width: 100%;
+  height: 100%;
+}
+.site-shell.success-page .journey-image-frame .journey-image-placeholder {
+  min-height: 0;
+}
+.site-shell.success-page .then-now-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 20px;
+}
+.site-shell.success-page .then-now-card,
+.site-shell.success-page .tradition-card {
+  overflow: hidden;
+  border: 1px solid rgba(11,29,50,.14);
+  border-radius: 20px;
+  background: var(--at-paper);
+  box-shadow: 0 18px 45px rgba(11,29,50,.07);
+}
+.site-shell.success-page .then-now-heading {
+  padding: 22px 24px 18px;
+}
+.site-shell.success-page .then-now-heading span {
+  display: block;
+  color: var(--at-navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.site-shell.success-page .then-now-heading small {
+  display: block;
+  margin-top: 6px;
+  color: #66727a;
+}
+.site-shell.success-page .then-now-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--at-navy);
+}
+.site-shell.success-page .then-now-images figure {
+  margin: 0;
+  min-width: 0;
+  background: #e9e1d2;
+}
+.site-shell.success-page .then-now-images img,
+.site-shell.success-page .then-now-image-placeholder {
+  width: 100%;
+  height: 230px;
+  display: block;
+  object-fit: cover;
+}
+.site-shell.success-page .then-now-image-placeholder {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  color: #66727a;
+  text-align: center;
+}
+.site-shell.success-page .then-now-images figcaption {
+  padding: 8px 12px;
+  color: var(--at-gold);
+  background: var(--at-navy);
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.site-shell.success-page .then-now-copy {
+  padding: 20px 24px 24px;
+}
+.site-shell.success-page .then-now-copy p {
+  margin: 0 0 10px;
+  color: #4a5964;
+}
+.site-shell.success-page .traditions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 18px;
+}
+.site-shell.success-page .tradition-card {
+  padding: 28px 24px;
+}
+.site-shell.success-page .tradition-number {
+  color: var(--at-gold);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.site-shell.success-page .tradition-card h3 {
+  margin: 14px 0 8px;
+  color: var(--at-navy);
+  font-family: Georgia, "Times New Roman", serif;
+}
+.site-shell.success-page .tradition-period {
+  color: var(--at-gold);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.site-shell.success-page .tradition-card > p {
+  color: #4a5964;
+}
+.site-shell.success-page .tradition-place {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(11,29,50,.1);
+}
+.site-shell.success-page .tradition-evidence {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(11,29,50,.1);
+}
+.site-shell.success-page .tradition-evidence span {
+  color: var(--at-gold);
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.site-shell.success-page .tradition-evidence p {
+  margin-bottom: 0;
+  color: #5a6770;
+  font-size: .86rem;
+}
+@media (max-width: 900px) {
+  .site-shell.success-page .then-now-grid,
+  .site-shell.success-page .traditions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .site-shell.success-page .then-now-images {
+    grid-template-columns: 1fr;
+  }
+}
