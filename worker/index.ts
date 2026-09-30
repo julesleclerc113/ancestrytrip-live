@@ -1510,11 +1510,20 @@ async function findFallbackPlaceImage(
 
   if (!name && !location) return null;
 
+  const primaryName =
+    name
+      .split(/\s+(?:and|&|et)\s+/i)[0]
+      ?.replace(/\s*\([^)]*\)\s*$/, "")
+      .trim() || name;
+
   const queries = Array.from(
     new Set(
       [
         [name, location].filter(Boolean).join(" "),
         [location, name].filter(Boolean).join(" "),
+        [primaryName, location].filter(Boolean).join(" "),
+        [location, primaryName].filter(Boolean).join(" "),
+        primaryName,
         name,
         location,
       ].filter(Boolean),
@@ -2029,7 +2038,47 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
 ;
 
   const hydratedHistoricalComparisons = (
-    await Promise.all(historicalComparisons)
+    await Promise.all(
+      historicalComparisons.map(async (comparisonPromise) => {
+        const comparison = await comparisonPromise;
+
+        if (
+          comparison.historical_image_url &&
+          comparison.current_image_url
+        ) {
+          return comparison;
+        }
+
+        // A comparison can name a specific landmark that does not map cleanly
+        // to a place-card title. Search that comparison directly rather than
+        // declaring the current visual unavailable.
+        if (!comparison.current_image_url) {
+          const comparisonPlace: ReportPlace = {
+            name: comparison.place_name,
+            location: comparison.location,
+            why_it_matters: comparison.current_description,
+            what_to_see: comparison.current_description,
+          };
+
+          const comparisonImage = await findFallbackPlaceImage(
+            comparisonPlace,
+            usedPlaceImages,
+            {
+              minimumBytes: 50000,
+              minimumWidth: 640,
+              minimumHeight: 400,
+            },
+          );
+
+          if (comparisonImage) {
+            usedPlaceImages.add(comparisonImage);
+            comparison.current_image_url = comparisonImage;
+          }
+        }
+
+        return comparison;
+      }),
+    )
   ).filter((comparison) => !!comparison.historical_image_url);
 
   return {
@@ -2052,7 +2101,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
               : undefined,
         }))
       : [],
-    image_hydration_version: 5,
+    image_hydration_version: 6,
   };
 }
 
@@ -3537,7 +3586,7 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 5 ||
+        reportContent.image_hydration_version !== 6 ||
         reportContent.places.some((place) => !place.image_url);
 
       if (needsImageHydration) {
