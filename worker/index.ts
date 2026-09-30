@@ -2009,16 +2009,26 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
           const normalizedCandidatePrimaryName =
             normalizePlaceText(candidatePrimaryName);
 
-          return (
-            (normalizedComparisonName.length >= 6 &&
-              (candidateName.includes(normalizedComparisonName) ||
-                normalizedComparisonName.includes(candidateName))) ||
-            (normalizedComparisonPrimaryName.length >= 6 &&
-              (candidateName.includes(normalizedComparisonPrimaryName) ||
-                normalizedComparisonPrimaryName.includes(candidateName))) ||
-            (normalizedCandidatePrimaryName.length >= 6 &&
-              (normalizedCandidatePrimaryName.includes(normalizedComparisonPrimaryName) ||
-                normalizedComparisonPrimaryName.includes(normalizedCandidatePrimaryName)))
+          const comparisonTokens = new Set(
+            placeTokens(comparisonPrimaryName),
+          );
+          const candidateTokens = new Set(
+            placeTokens(candidatePrimaryName),
+          );
+
+          const samePrimaryName =
+            normalizedComparisonPrimaryName.length >= 6 &&
+            (candidateName.includes(normalizedComparisonPrimaryName) ||
+              normalizedComparisonPrimaryName.includes(candidateName) ||
+              normalizedCandidatePrimaryName === normalizedComparisonPrimaryName);
+
+          const sharedTokens = Array.from(comparisonTokens).filter((token) =>
+            candidateTokens.has(token),
+          );
+
+          return samePrimaryName || (
+            comparisonTokens.size >= 2 &&
+            sharedTokens.length === comparisonTokens.size
           );
         });
 
@@ -2091,7 +2101,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
 
           const comparisonImage = await findFallbackPlaceImage(
             comparisonPlace,
-            usedPlaceImages,
+            new Set<string>(),
             {
               minimumBytes: 50000,
               minimumWidth: 640,
@@ -2108,9 +2118,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         return comparison;
       }),
     )
-  ).filter((comparison) =>
-    !!comparison.historical_image_url && !!comparison.current_image_url,
-  );
+  ).filter((comparison) => !!comparison.historical_image_url);
 
   return {
     ...report,
@@ -3617,8 +3625,13 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 8 ||
-        reportContent.places.some((place) => !place.image_url);
+        reportContent.image_hydration_version !== 9 ||
+        reportContent.places.some((place) => !place.image_url) ||
+        (reportContent.historical_comparisons || []).some(
+          (comparison) =>
+            !comparison.historical_image_url ||
+            !comparison.current_image_url,
+        );
 
       if (needsImageHydration) {
         try {
