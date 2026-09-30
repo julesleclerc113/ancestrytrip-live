@@ -1633,7 +1633,7 @@ async function findFallbackPlaceImage(
 
   // Prefer exact Wikimedia Commons categories for named places. These categories
   // are especially reliable for landmarks and transport sites.
-  for (const categoryName of [name]) {
+  for (const categoryName of Array.from(new Set([name, primaryName].filter(Boolean)))) {
     try {
       const params = new URLSearchParams({
         action: "query",
@@ -1951,10 +1951,15 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     let sourceImage: string | null = null;
     for (const source of report.sources || []) {
       const sourceText = normalizePlaceText([source.title, source.url].join(" "));
-      const placeTokensForSource = placeTokens(place.name);
+      const primaryPlaceName =
+        place.name
+          .split(/\s+(?:and|&|et)\s+/i)[0]
+          ?.replace(/\s*\([^)]*\)\s*$/, "")
+          .trim() || place.name;
+      const placeTokensForSource = placeTokens(primaryPlaceName);
       const relevant = placeTokensForSource.length === 0
         ? false
-        : placeTokensForSource.filter((token) => sourceText.includes(token)).length >= Math.min(2, placeTokensForSource.length);
+        : placeTokensForSource.every((token) => sourceText.includes(token));
 
       if (!relevant) continue;
 
@@ -2121,7 +2126,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
               : undefined,
         }))
       : [],
-    image_hydration_version: 7,
+    image_hydration_version: 8,
   };
 }
 
@@ -3606,7 +3611,7 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 7 ||
+        reportContent.image_hydration_version !== 8 ||
         reportContent.places.some((place) => !place.image_url);
 
       if (needsImageHydration) {
