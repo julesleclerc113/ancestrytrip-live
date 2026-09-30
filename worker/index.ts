@@ -2080,8 +2080,14 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         // to a place-card title. Search that comparison directly rather than
         // declaring the current visual unavailable.
         if (!comparison.current_image_url) {
+          const comparisonPrimaryName =
+            comparison.place_name
+              .split(/\s+(?:and|&|et)\s+/i)[0]
+              ?.replace(/\s*\([^)]*\)\s*$/, "")
+              .trim() || comparison.place_name;
+
           const comparisonPlace: ReportPlace = {
-            name: comparison.place_name,
+            name: comparisonPrimaryName,
             location: comparison.location,
             why_it_matters: comparison.current_description,
             what_to_see: comparison.current_description,
@@ -2089,28 +2095,62 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
             longitude: comparison.longitude,
           };
 
-          const comparisonImage = await findFallbackPlaceImage(
-            comparisonPlace,
-            usedPlaceImages,
-            {
-              minimumBytes: 50000,
-              minimumWidth: 640,
-              minimumHeight: 400,
-            },
-          );
+          // First search the report's own consulted sources for a current
+          // visual explicitly associated with this landmark. This avoids
+          // accepting a nearby but unrelated Wikimedia photograph.
+          const sourceTokens = placeTokens(comparisonPrimaryName);
+          for (const source of report.sources || []) {
+            const sourceText = normalizePlaceText(
+              [source.title, source.url].join(" "),
+            );
+            const relevant =
+              sourceTokens.length > 0 &&
+              sourceTokens.every((token) => sourceText.includes(token));
 
-          if (comparisonImage) {
-            usedPlaceImages.add(comparisonImage);
-            comparison.current_image_url = comparisonImage;
+            if (!relevant) continue;
+            if (
+              comparison.historical_image_source_url &&
+              source.url === comparison.historical_image_source_url
+            ) {
+              continue;
+            }
+
+            const sourceImage = await extractOgImage(source);
+            if (
+              sourceImage &&
+              await isUsableImageUrl(sourceImage, {
+                minimumBytes: 50000,
+                minimumWidth: 640,
+                minimumHeight: 400,
+              })
+            ) {
+              comparison.current_image_url = sourceImage;
+              comparison.current_image_source_url = source.url;
+              break;
+            }
+          }
+
+          if (!comparison.current_image_url) {
+            const comparisonImage = await findFallbackPlaceImage(
+              comparisonPlace,
+              new Set<string>(),
+              {
+                minimumBytes: 50000,
+                minimumWidth: 640,
+                minimumHeight: 400,
+              },
+            );
+
+            if (comparisonImage) {
+              comparison.current_image_url = comparisonImage;
+            }
           }
         }
 
         return comparison;
       }),
     )
-  ).filter((comparison) =>
-    !!comparison.historical_image_url && !!comparison.current_image_url,
-  );
+  ).filter((comparison) => !!comparison.historical_image_url);
 
   return {
     ...report,
@@ -3617,8 +3657,13 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 8 ||
-        reportContent.places.some((place) => !place.image_url);
+        reportContent.image_hydration_version !== 9 ||
+        reportContent.places.some((place) => !place.image_url) ||
+        (reportContent.historical_comparisons || []).some(
+          (comparison) =>
+            !comparison.historical_image_url ||
+            !comparison.current_image_url,
+        );
 
       if (needsImageHydration) {
         try {
