@@ -55,6 +55,8 @@ interface ReportHistoricalComparison {
   historical_image_source_url?: string;
   current_image_url?: string;
   current_image_source_url?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ReportTradition {
@@ -2027,11 +2029,11 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
           : undefined;
 
       const currentCandidates = [
-        // Only reuse a Journey image when the comparison name actually maps
-        // to that Journey place. Never use location-only matches.
+        // Prefer imagery already proven against the matched Journey place.
+        // Do not trust a report-supplied comparison URL merely because it is
+        // a valid image: it may depict a different nearby landmark.
         place?.image_url,
         place?.image_fallback_url,
-        comparison.current_image_url,
       ].filter(
         (url): url is string =>
           typeof url === "string" && /^https?:\/\//i.test(url),
@@ -2056,6 +2058,8 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         ...comparison,
         historical_image_url: historicalUrl,
         current_image_url: currentImageUrl,
+        latitude: place?.latitude,
+        longitude: place?.longitude,
       };
     })
 ;
@@ -2081,6 +2085,8 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
             location: comparison.location,
             why_it_matters: comparison.current_description,
             what_to_see: comparison.current_description,
+            latitude: comparison.latitude,
+            longitude: comparison.longitude,
           };
 
           const comparisonImage = await findFallbackPlaceImage(
@@ -2102,7 +2108,9 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         return comparison;
       }),
     )
-  ).filter((comparison) => !!comparison.historical_image_url);
+  ).filter((comparison) =>
+    !!comparison.historical_image_url && !!comparison.current_image_url,
+  );
 
   return {
     ...report,
@@ -2124,7 +2132,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
               : undefined,
         }))
       : [],
-    image_hydration_version: 8,
+    image_hydration_version: 9,
   };
 }
 
