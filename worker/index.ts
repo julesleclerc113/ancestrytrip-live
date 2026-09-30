@@ -1463,23 +1463,41 @@ function hasStrongPlaceImageTitleMatch(
 
   if (!normalizedTitle || !normalizedName) return false;
 
-  // An exact normalized title is strong evidence even for a one-token name.
-  if (
-    normalizedTitle === normalizedName ||
-    normalizedTitle.includes(normalizedName)
-  ) {
-    return true;
+  // Report place names can combine two closely related landmarks, for example
+  // "Bassin Vauban and Quai Saint-Louis" or add a historical locality in
+  // parentheses. In those cases, the first named landmark is the primary
+  // place resolved by the report and is sufficient exact-place evidence.
+  const primaryName = placeName
+    .split(/\s+(?:and|&|et)\s+/i)[0]
+    ?.replace(/\s*\([^)]*\)\s*$/, "")
+    .trim() || placeName;
+
+  const candidateNames = Array.from(
+    new Set([placeName, primaryName].filter(Boolean)),
+  );
+
+  for (const candidateName of candidateNames) {
+    const normalizedCandidate = normalizePlaceText(candidateName);
+
+    if (
+      normalizedTitle === normalizedCandidate ||
+      normalizedTitle.includes(normalizedCandidate)
+    ) {
+      return true;
+    }
+
+    const nameTokens = placeTokens(candidateName);
+    const titleTokens = new Set(placeTokens(title));
+
+    if (
+      nameTokens.length >= 1 &&
+      nameTokens.every((token) => titleTokens.has(token))
+    ) {
+      return true;
+    }
   }
 
-  const nameTokens = placeTokens(placeName);
-  const titleTokens = new Set(placeTokens(title));
-
-  // For multi-word landmarks, require every meaningful name token to appear
-  // in the Wikimedia file title. Proximity alone is never sufficient.
-  return (
-    nameTokens.length >= 2 &&
-    nameTokens.every((token) => titleTokens.has(token))
-  );
+  return false;
 }
 
 async function findFallbackPlaceImage(
