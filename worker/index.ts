@@ -1979,23 +1979,39 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
     .slice(0, 4)
     .map(async (comparison) => {
       const normalizedComparisonName = normalizePlaceText(comparison.place_name);
-      const exactPlace = placeByName.get(normalizedComparisonName);
+      const comparisonPrimaryName =
+        comparison.place_name
+          .split(/\s+(?:and|&|et)\s+/i)[0]
+          ?.replace(/\s*\([^)]*\)\s*$/, "")
+          .trim() || comparison.place_name;
+      const normalizedComparisonPrimaryName =
+        normalizePlaceText(comparisonPrimaryName);
+      const exactPlace =
+        placeByName.get(normalizedComparisonName) ||
+        placeByName.get(normalizedComparisonPrimaryName);
 
       const place =
         exactPlace ||
         places.find((candidate) => {
           const candidateName = normalizePlaceText(candidate.name);
-          const candidateLocation = normalizePlaceText(candidate.location);
-          const comparisonLocation = normalizePlaceText(comparison.location);
+          const candidatePrimaryName =
+            candidate.name
+              .split(/\s+(?:and|&|et)\s+/i)[0]
+              ?.replace(/\s*\([^)]*\)\s*$/, "")
+              .trim() || candidate.name;
+          const normalizedCandidatePrimaryName =
+            normalizePlaceText(candidatePrimaryName);
+
           return (
             (normalizedComparisonName.length >= 6 &&
-              candidateName.includes(normalizedComparisonName)) ||
-            (candidateName.length >= 6 &&
-              normalizedComparisonName.includes(candidateName)) ||
-            (comparisonLocation.length >= 6 &&
-              candidateLocation.includes(comparisonLocation)) ||
-            (candidateLocation.length >= 6 &&
-              comparisonLocation.includes(candidateLocation))
+              (candidateName.includes(normalizedComparisonName) ||
+                normalizedComparisonName.includes(candidateName))) ||
+            (normalizedComparisonPrimaryName.length >= 6 &&
+              (candidateName.includes(normalizedComparisonPrimaryName) ||
+                normalizedComparisonPrimaryName.includes(candidateName))) ||
+            (normalizedCandidatePrimaryName.length >= 6 &&
+              (normalizedCandidatePrimaryName.includes(normalizedComparisonPrimaryName) ||
+                normalizedComparisonPrimaryName.includes(normalizedCandidatePrimaryName)))
           );
         });
 
@@ -2006,6 +2022,8 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
           : undefined;
 
       const currentCandidates = [
+        // Only reuse a Journey image when the comparison name actually maps
+        // to that Journey place. Never use location-only matches.
         place?.image_url,
         place?.image_fallback_url,
         comparison.current_image_url,
@@ -2058,6 +2076,8 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
             location: comparison.location,
             why_it_matters: comparison.current_description,
             what_to_see: comparison.current_description,
+            latitude: place?.latitude,
+            longitude: place?.longitude,
           };
 
           const comparisonImage = await findFallbackPlaceImage(
@@ -2101,7 +2121,7 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
               : undefined,
         }))
       : [],
-    image_hydration_version: 6,
+    image_hydration_version: 7,
   };
 }
 
@@ -3586,7 +3606,7 @@ export default {
       // Recheck imagery when the image pipeline version is old or any place
       // still lacks an image. This upgrades existing reports as the search improves.
       const needsImageHydration =
-        reportContent.image_hydration_version !== 6 ||
+        reportContent.image_hydration_version !== 7 ||
         reportContent.places.some((place) => !place.image_url);
 
       if (needsImageHydration) {
