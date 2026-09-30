@@ -1454,6 +1454,34 @@ async function extractOgImage(source: ReportSource) {
   }
 }
 
+function hasStrongPlaceImageTitleMatch(
+  title: string,
+  placeName: string,
+): boolean {
+  const normalizedTitle = normalizePlaceText(title);
+  const normalizedName = normalizePlaceText(placeName);
+
+  if (!normalizedTitle || !normalizedName) return false;
+
+  // An exact normalized title is strong evidence even for a one-token name.
+  if (
+    normalizedTitle === normalizedName ||
+    normalizedTitle.includes(normalizedName)
+  ) {
+    return true;
+  }
+
+  const nameTokens = placeTokens(placeName);
+  const titleTokens = new Set(placeTokens(title));
+
+  // For multi-word landmarks, require every meaningful name token to appear
+  // in the Wikimedia file title. Proximity alone is never sufficient.
+  return (
+    nameTokens.length >= 2 &&
+    nameTokens.every((token) => titleTokens.has(token))
+  );
+}
+
 async function findFallbackPlaceImage(
   place: ReportPlace,
   usedImageUrls: Set<string>,
@@ -1537,6 +1565,11 @@ async function findFallbackPlaceImage(
             if (!info?.url) return [];
 
             const title = (page.title || "").replace(/^File:/i, "");
+
+            // Geosearch only establishes proximity. The file title must also
+            // provide strong evidence that the image is the exact named place.
+            if (!hasStrongPlaceImageTitleMatch(title, name)) return [];
+
             const tokens = placeTokens(title);
             const nameMatches = tokens.filter((token) => nameTokens.has(token)).length;
             const locationMatches = tokens.filter((token) => locationTokens.has(token)).length;
@@ -1544,6 +1577,7 @@ async function findFallbackPlaceImage(
             return [{
               url: info.url,
               score:
+                200 +
                 nameMatches * 80 +
                 locationMatches * 35 +
                 Math.min((Number(info.width) || 0) / 30, 80),
@@ -1611,9 +1645,9 @@ async function findFallbackPlaceImage(
       const candidates = Object.values(data.query?.pages || {})
         .flatMap((page) => {
           const info = page.imageinfo?.[0];
-          return info?.url
-            ? [{ url: info.url, width: Number(info.width) || 0 }]
-            : [];
+          const title = (page.title || "").replace(/^File:/i, "");
+          if (!info?.url || !hasStrongPlaceImageTitleMatch(title, name)) return [];
+          return [{ url: info.url, width: Number(info.width) || 0 }];
         })
         .filter((candidate) => /^https?:\/\//i.test(candidate.url) && !usedImageUrls.has(candidate.url))
         .sort((a, b) => b.width - a.width);
@@ -1706,6 +1740,8 @@ async function findFallbackPlaceImage(
               ? 1
               : 0
             : 0;
+
+          if (!hasStrongPlaceImageTitleMatch(title, name)) return [];
 
           const exactName =
             normalizedName.length > 0 &&
