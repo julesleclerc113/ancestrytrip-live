@@ -2081,8 +2081,6 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
             location: comparison.location,
             why_it_matters: comparison.current_description,
             what_to_see: comparison.current_description,
-            latitude: place?.latitude,
-            longitude: place?.longitude,
           };
 
           const comparisonImage = await findFallbackPlaceImage(
