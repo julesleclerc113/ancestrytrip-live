@@ -2087,8 +2087,56 @@ async function hydrateReportImages(report: HeritageReport): Promise<HeritageRepo
         }
 
         // A comparison can name a specific landmark that does not map cleanly
-        // to a place-card title. Search that comparison directly rather than
-        // declaring the current visual unavailable.
+        // to a place-card title. Search the report's researched webpages before
+        // falling back to Wikimedia. Small quays and basins are often shown on
+        // local-history or institutional pages without the landmark in the
+        // image filename.
+        if (!comparison.current_image_url) {
+          const sourceTokens = placeTokens(comparisonPrimaryName);
+          const historicalSource =
+            typeof comparison.historical_image_source_url === "string"
+              ? comparison.historical_image_source_url
+              : "";
+
+          const relevantSources = (report.sources || [])
+            .filter((source) => {
+              if (
+                !source ||
+                typeof source.url !== "string" ||
+                source.url === historicalSource
+              ) {
+                return false;
+              }
+
+              const sourceText = normalizePlaceText(
+                [source.title, source.url].join(" "),
+              );
+
+              return (
+                sourceTokens.length > 0 &&
+                sourceTokens.every((token) => sourceText.includes(token))
+              );
+            })
+            .slice(0, 6);
+
+          for (const source of relevantSources) {
+            const sourceImage = await extractOgImage(source);
+
+            if (
+              sourceImage &&
+              (await isUsableImageUrl(sourceImage, {
+                minimumBytes: 50000,
+                minimumWidth: 640,
+                minimumHeight: 400,
+              }))
+            ) {
+              comparison.current_image_url = sourceImage;
+              comparison.current_image_source_url = source.url;
+              break;
+            }
+          }
+        }
+
         if (!comparison.current_image_url) {
           const comparisonPlace: ReportPlace = {
             name: comparison.place_name,
