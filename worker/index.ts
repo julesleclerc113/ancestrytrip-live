@@ -1645,7 +1645,9 @@ async function findFallbackPlaceImage(
       const candidates = Object.values(data.query?.pages || {})
         .flatMap((page) => {
           const info = page.imageinfo?.[0];
-          const title = (page.title || "").replace(/^File:/i, "");
+          const title = typeof (page as { title?: string }).title === "string"
+            ? (page as { title?: string }).title!.replace(/^File:/i, "")
+            : "";
           if (!info?.url || !hasStrongPlaceImageTitleMatch(title, name)) return [];
           return [{ url: info.url, width: Number(info.width) || 0 }];
         })
